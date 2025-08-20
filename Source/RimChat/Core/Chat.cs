@@ -15,14 +15,14 @@ public class Chat(Pawn pawn, LogEntry entry)
     private static readonly Regex RemoveColorTag = new("<\\/?color[^>]*>");
     public LogEntry Entry { get; } = entry;
 
-    public async Task<bool> Vocalize()
+    public async Task<bool> Vocalize(string whatWasSaid)
     {
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Add("xi-api-key", xiApiKey);
 
         var requestBody = new
         {
-            text = Entry.ToGameStringFromPOV(pawn),
+            text = whatWasSaid,
             model_id = "eleven_flash_v2_5"
         };
 
@@ -73,7 +73,7 @@ public class Chat(Pawn pawn, LogEntry entry)
                         contentItem.TryGetProperty("text", out var textElement))
                     {
                         Log.Message(textElement.GetString());
-                        await Vocalize();
+                        await Vocalize(textElement.GetString());
                         return response != null;
                     }
                 }
@@ -117,9 +117,21 @@ public static class WavUtility
 {
     public static AudioClip ToAudioClip(byte[] wavFile, string clipName = "AudioClip")
     {
-        // This is a stub. You need a proper WAV parser for production use.
-        // For now, this just returns an empty AudioClip.
-        // Consider using a library like NAudio or a Unity asset for full WAV support.
-        return AudioClip.Create(clipName, 1, 1, 44100, false);
+        // Minimal WAV PCM parser for Unity (assumes 16-bit PCM, mono)
+        int channels = 1;
+        int sampleRate = 16000;
+        int headerOffset = 44; // Standard WAV header size
+        int sampleCount = (wavFile.Length - headerOffset) / 2;
+        float[] samples = new float[sampleCount];
+
+        for (int i = 0; i < sampleCount; i++)
+        {
+            short sample = (short)(wavFile[headerOffset + i * 2] | (wavFile[headerOffset + i * 2 + 1] << 8));
+            samples[i] = sample / 32768f;
+        }
+
+        AudioClip audioClip = AudioClip.Create(clipName, sampleCount, channels, sampleRate, false);
+        audioClip.SetData(samples, 0);
+        return audioClip;
     }
 }
