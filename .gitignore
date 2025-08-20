@@ -1,0 +1,7 @@
+.vscode/*
+Assemblies/*
+Source/RimChat/obj/*
+Source/RimChat/.vs/*
+*.sln
+Preview.png
+Source/RimChat/RimChat.csproj.user
