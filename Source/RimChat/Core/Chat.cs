@@ -15,15 +15,20 @@ public class Chat(Pawn pawn, LogEntry entry)
     private static readonly Regex RemoveColorTag = new("<\\/?color[^>]*>");
     public LogEntry Entry { get; } = entry;
 
+    public AudioSource? AudioSource { get; private set; }
+
+    public Task<string>? AIChat { get; set; }
+
     public async Task<bool> Vocalize(string whatWasSaid)
     {
         using var client = new HttpClient();
+        var xiApiKey = Settings.VoiceAPIKey.Value;
         client.DefaultRequestHeaders.Add("xi-api-key", xiApiKey);
 
         var requestBody = new
         {
             text = whatWasSaid,
-            model_id = "eleven_flash_v2_5"
+            model_id = "eleven_turbo_v2_5"
         };
 
         var json = JsonSerializer.Serialize(requestBody);
@@ -49,13 +54,13 @@ public class Chat(Pawn pawn, LogEntry entry)
         var audioClip = WavUtility.ToAudioClip(audioBytes, "VocalizedText");
         var audioSource = new GameObject("VocalizedAudioSource").AddComponent<AudioSource>();
         audioSource.clip = audioClip;
-        audioSource.Play();
+        AudioSource = audioSource;
 
         Log.Message($"Received {audioBytes.Length} bytes of audio data.");
         return true;
     }
 
-    public async Task<bool> Talk(bool isSelected, string chatgpt_api_key)
+    public async Task<string> Talk(bool isSelected, string chatgpt_api_key)
     {
         var text = Entry.ToGameStringFromPOV(pawn);
         var response = await GetOpenAIResponseAsync(chatgpt_api_key, text);
@@ -72,15 +77,13 @@ public class Chat(Pawn pawn, LogEntry entry)
                     if (contentItem.GetProperty("type").GetString() == "output_text" &&
                         contentItem.TryGetProperty("text", out var textElement))
                     {
-                        Log.Message(textElement.GetString());
-                        await Vocalize(textElement.GetString());
-                        return response != null;
+                        return textElement.GetString()!;
                     }
                 }
             }
         }
         Log.Message("No output text found in response.");
-        return response != null;
+        return response;
     }
 
     public async Task<string?> GetOpenAIResponseAsync(string apiKey, string input)
