@@ -46,13 +46,28 @@ public static class Chatter
         foreach (var chat in Dictionary[pawn].OrderByDescending(static chat => chat.Entry.Tick).ToArray())
         {
             if (count > 1) { return; }
-            chat.Talk(isSelected, Settings.TextAPIKey.Value);
-            if (chat.AudioSource is not null && !chat.AudioSource.isPlaying)
+            if (chat.AIChat == null)
             {
-                chat.AudioSource.Play();
+                // Talk has already been called for this chat, do nothing
+                chat.AIChat = chat.Talk(isSelected, Settings.TextAPIKey.Value);
+                count++;
             }
-            Remove(pawn, chat);
-            count++;
+            else if (chat.AIChat is not null && !chat.AIChat.IsCompleted)
+            {
+                // Message is still being waited on, do nothing
+                return;
+            }
+            else if (chat.AIChat is not null && chat.AIChat.IsCompleted)
+            {
+                var result = chat.AIChat.Result;
+                Log.Message($"Returned text: {result}");
+                Remove(pawn, chat);
+            }
+            else
+            {
+                // Message has been completed, remove it
+                return;
+            }
         }
     }
     public static void Add(LogEntry entry)
