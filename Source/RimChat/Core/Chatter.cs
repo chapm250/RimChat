@@ -2,6 +2,7 @@
 using RimWorld;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime;
 using System.Text;
@@ -12,6 +13,7 @@ using RimChat.Access;
 using RimWorld.Planet;
 using Verse;
 using HarmonyLib;
+using System.Configuration;
 
 namespace RimChat.Core;
 
@@ -39,14 +41,16 @@ public static class Chatter
     {
         if (!CanRender() || !pawn.Spawned || pawn.Map != Find.CurrentMap || pawn.Map!.fogGrid!.IsFogged(pawn.Position)) { return; }
 
-        var pos = GenMapUI.LabelDrawPosFor(pawn, LabelPositionOffset);
-
         var count = 0;
 
         foreach (var chat in Dictionary[pawn].OrderByDescending(static chat => chat.Entry.Tick).ToArray())
         {
             if (count > 1) { return; }
-            chat.Talk(isSelected);
+            chat.Talk(isSelected, Settings.TextAPIKey.Value);
+            if (chat.AudioSource is not null && !chat.AudioSource.isPlaying)
+            {
+                chat.AudioSource.Play();
+            }
             Remove(pawn, chat);
             count++;
         }
