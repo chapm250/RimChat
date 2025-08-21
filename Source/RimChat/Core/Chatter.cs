@@ -33,7 +33,7 @@ public static class Chatter
         foreach (var pawn in Dictionary.Keys.OrderBy(pawn => pawn == selected).ThenBy(static pawn => pawn.Position.y).ToArray()) { DrawBubble(pawn, pawn == selected); }
     }
 
-    private static void DrawBubble(Pawn pawn, bool isSelected)
+    private static async Task DrawBubble(Pawn pawn, bool isSelected)
     {
         if (!CanRender() || !pawn.Spawned || pawn.Map != Find.CurrentMap || pawn.Map!.fogGrid!.IsFogged(pawn.Position)) { return; }
 
@@ -65,6 +65,7 @@ public static class Chatter
             Log.Message($"Returned text: {result}");
             Log.Message($"Started chat for {pawn.Name} with entry {chat.Entry.Tick} at {chat.LastTalked}");
             chat.AIChat = null;
+            await chat.Vocalize(result);
         }
         else
         {

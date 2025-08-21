@@ -58,6 +58,8 @@ public class Chat(Pawn pawn, LogEntry entry)
         audioSource.clip = audioClip;
         AudioSource = audioSource;
 
+        AudioSource.Play();
+
         Log.Message($"Received {audioBytes.Length} bytes of audio data.");
         return true;
     }
