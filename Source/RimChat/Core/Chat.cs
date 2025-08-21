@@ -13,7 +13,7 @@ namespace RimChat.Core;
 public class Chat(Pawn pawn, LogEntry entry)
 {
     private static readonly Regex RemoveColorTag = new("<\\/?color[^>]*>");
-    public LogEntry Entry { get; } = entry;
+    public LogEntry Entry { get; set; } = entry;
 
     public AudioSource? AudioSource { get; private set; }
 
