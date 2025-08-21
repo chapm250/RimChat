@@ -46,11 +46,21 @@ public static class Chatter
         foreach (var chat in Dictionary[pawn].OrderByDescending(static chat => chat.Entry.Tick).ToArray())
         {
             if (count > 1) { return; }
-            if (chat.AIChat == null)
+            if (chat.AIChat == null && (chat.LastTalked < System.DateTime.Now.AddMinutes(-5) || chat.LastTalked == null))
             {
-                // Talk has already been called for this chat, do nothing
+                // If the chat has not been talked about yet, start the talk
+                if (chat.Entry is PlayLogEntry_Interaction interaction)
+                {
+                    var initiator = (Pawn?)Reflection.Verse_PlayLogEntry_Interaction_Initiator.GetValue(interaction);
+                    if (initiator != pawn) { return; }
+                }
+
+                // Start the talk
                 chat.AIChat = chat.Talk(isSelected, Settings.TextAPIKey.Value);
                 count++;
+                Log.Message($"Last talked with entry: {chat.LastTalked}");
+                Log.Message($"5 min ago: {DateTime.Now.AddMinutes(-5)}");
+                chat.LastTalked = System.DateTime.Now;
             }
             else if (chat.AIChat is not null && !chat.AIChat.IsCompleted)
             {
@@ -61,6 +71,7 @@ public static class Chatter
             {
                 var result = chat.AIChat.Result;
                 Log.Message($"Returned text: {result}");
+                Log.Message($"Started chat for {pawn.Name} with entry {chat.Entry.Tick} at {chat.LastTalked}");
                 Remove(pawn, chat);
             }
             else

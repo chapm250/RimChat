@@ -19,6 +19,8 @@ public class Chat(Pawn pawn, LogEntry entry)
 
     public Task<string>? AIChat { get; set; }
 
+    public System.DateTime LastTalked { get; set; }
+
     public async Task<bool> Vocalize(string whatWasSaid)
     {
         using var client = new HttpClient();
@@ -62,7 +64,7 @@ public class Chat(Pawn pawn, LogEntry entry)
 
     public async Task<string> Talk(bool isSelected, string chatgpt_api_key)
     {
-        var text = Entry.ToGameStringFromPOV(pawn);
+        var text = RemoveColorTag.Replace(Entry.ToGameStringFromPOV(pawn), string.Empty);
         var response = await GetOpenAIResponseAsync(chatgpt_api_key, text);
         // Parse the response JSON and extract output->content->text
         using var doc = JsonDocument.Parse(response);
