@@ -22,6 +22,7 @@ public static class Chatter
     private const float LabelPositionOffset = -0.6f;
     private static bool CanRender() => WorldRendererUtility.CurrentWorldRenderMode is WorldRenderMode.None or WorldRenderMode.Background;
     private static Dictionary<Pawn, Chat> Dictionary = new();
+    private static System.DateTime next_talk = DateTime.Now;
     public static void Talk()
     {
         var altitude = GetAltitude();
@@ -39,8 +40,7 @@ public static class Chatter
         var random = new System.Random();
         var randomEntry = Dictionary.ElementAt(random.Next(Dictionary.Count));
         var chat = randomEntry.Value;
-
-        if (chat.AIChat == null && (chat.LastTalked < System.DateTime.Now.AddMinutes(-1) || chat.LastTalked == null))
+        if (chat.AIChat == null && DateTime.Now > next_talk)
         {
             // If the chat has not been talked about yet, start the talk
             if (chat.Entry is PlayLogEntry_Interaction interaction)
@@ -51,8 +51,8 @@ public static class Chatter
 
             // Start the talk
             chat.AIChat = chat.Talk(isSelected, Settings.TextAPIKey.Value);
-            Log.Message($"Last talked with entry: {chat.LastTalked}");
-            chat.LastTalked = DateTime.Now;
+            next_talk = DateTime.Now.AddMinutes(1);
+            Log.Message($"Next talk: {next_talk}");
         }
         else if (chat.AIChat is not null && !chat.AIChat.IsCompleted)
         {
