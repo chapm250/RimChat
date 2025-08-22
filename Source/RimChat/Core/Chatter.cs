@@ -15,14 +15,19 @@ using Verse;
 using HarmonyLib;
 using System.Configuration;
 using Unity.Burst.Intrinsics;
+using System.EnterpriseServices;
+using UnityEngine.PlayerLoop;
 
 namespace RimChat.Core;
 
 public static class Chatter
 {
+    private static readonly string[] male_voices = { "NYkjXRso4QIcgWakN1Cr", "zNsotODqUhvbJ5wMG7Ei", "MFZUKuGQUsGJPQjTS4wC", "4dZr8J4CBeokyRkTRpoN" };
+    private static readonly string[] female_voices = { "eUdJpUEN3EslrgE24PKx", "kNie5n4lYl7TrvqBZ4iG" };
     private const float LabelPositionOffset = -0.6f;
     private static bool CanRender() => WorldRendererUtility.CurrentWorldRenderMode is WorldRenderMode.None or WorldRenderMode.Background;
     private static Dictionary<Pawn, Chat> Dictionary = new();
+    private static Dictionary<Pawn, string> VoiceDict = new();
     private static System.DateTime next_talk = DateTime.Now;
 
     private static Pawn? is_up;
@@ -83,7 +88,8 @@ public static class Chatter
             Log.Message($"Returned text: {result}");
             chat.AIChat = null;
             Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
-            await chat.Vocalize(result);
+            chat.AlreadyPlayed = false;
+            await chat.Vocalize(result, VoiceDict[pawn]);
             is_up = null;
         }
         else
@@ -119,6 +125,24 @@ public static class Chatter
         else
         {
             Dictionary[initiator].Entry = entry;
+        }
+
+        string pawn_sex = initiator.gender.ToString();
+
+        if (!VoiceDict.ContainsKey(initiator))
+        {
+            if (pawn_sex == "Female")
+            {
+                var random = new System.Random();
+                var voice = female_voices[random.Next(female_voices.Length)];
+                VoiceDict[initiator] = voice;
+            }
+            else
+            {
+                var random = new System.Random();
+                var voice = male_voices[random.Next(male_voices.Length)];
+                VoiceDict[initiator] = voice;
+            }
         }
 
     }

@@ -22,7 +22,7 @@ public class Chat(Pawn pawn, LogEntry entry)
     public bool AlreadyPlayed { get; set; } = false;
 
 
-    public async Task<bool> Vocalize(string whatWasSaid)
+    public async Task<bool> Vocalize(string whatWasSaid, string voiceID)
     {
         using var client = new HttpClient();
         var xiApiKey = Settings.VoiceAPIKey.Value;
@@ -39,7 +39,7 @@ public class Chat(Pawn pawn, LogEntry entry)
 
         // Request WAV output for easier Unity playback
         var response = await client.PostAsync(
-            "https://api.elevenlabs.io/v1/text-to-speech/exsUS4vynmxd379XN4yO?output_format=pcm_16000",
+            $"https://api.elevenlabs.io/v1/text-to-speech/{voiceID}?output_format=pcm_16000",
             content);
 
         if (!response.IsSuccessStatusCode)
