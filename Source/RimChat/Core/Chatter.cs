@@ -22,8 +22,8 @@ namespace RimChat.Core;
 
 public static class Chatter
 {
-    private static readonly string[] male_voices = { "NYkjXRso4QIcgWakN1Cr", "zNsotODqUhvbJ5wMG7Ei", "MFZUKuGQUsGJPQjTS4wC", "4dZr8J4CBeokyRkTRpoN" };
-    private static readonly string[] female_voices = { "eUdJpUEN3EslrgE24PKx", "kNie5n4lYl7TrvqBZ4iG" };
+    private static readonly string[] male_voices = { "NYkjXRso4QIcgWakN1Cr", "XjLkpWUlnhS8i7gGz3lZ", "zNsotODqUhvbJ5wMG7Ei", "MFZUKuGQUsGJPQjTS4wC", "4dZr8J4CBeokyRkTRpoN" };
+    private static readonly string[] female_voices = { "eUdJpUEN3EslrgE24PKx", "kNie5n4lYl7TrvqBZ4iG", "g6xIsTj2HwM6VR4iXFCw", "jqcCZkN6Knx8BJ5TBdYR" };
     private const float LabelPositionOffset = -0.6f;
     private static bool CanRender() => WorldRendererUtility.CurrentWorldRenderMode is WorldRenderMode.None or WorldRenderMode.Background;
     private static Dictionary<Pawn, Chat> Dictionary = new();
@@ -134,14 +134,36 @@ public static class Chatter
             if (pawn_sex == "Female")
             {
                 var random = new System.Random();
-                var voice = female_voices[random.Next(female_voices.Length)];
+                string voice;
+                var assignedVoices = VoiceDict.Values.ToHashSet();
+                var availableVoices = female_voices.Where(v => !assignedVoices.Contains(v)).ToList();
+                if (availableVoices.Count > 0)
+                {
+                    voice = availableVoices[random.Next(availableVoices.Count)];
+                }
+                else
+                {
+                    voice = female_voices[random.Next(female_voices.Length)];
+                }
                 VoiceDict[initiator] = voice;
             }
             else
             {
+
                 var random = new System.Random();
-                var voice = male_voices[random.Next(male_voices.Length)];
+                string voice;
+                var assignedVoices = VoiceDict.Values.ToHashSet();
+                var availableVoices = male_voices.Where(v => !assignedVoices.Contains(v)).ToList();
+                if (availableVoices.Count > 0)
+                {
+                    voice = availableVoices[random.Next(availableVoices.Count)];
+                }
+                else
+                {
+                    voice = male_voices[random.Next(male_voices.Length)];
+                }
                 VoiceDict[initiator] = voice;
+
             }
         }
 
