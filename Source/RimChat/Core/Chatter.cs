@@ -27,8 +27,11 @@ public static class Chatter
     private const float LabelPositionOffset = -0.6f;
     private static bool CanRender() => WorldRendererUtility.CurrentWorldRenderMode is WorldRenderMode.None or WorldRenderMode.Background;
     private static Dictionary<Pawn, Chat> Dictionary = new();
+
     private static Dictionary<Pawn, string> VoiceDict = new();
     private static System.DateTime next_talk = DateTime.Now;
+
+    private static Pawn? talked_to;
 
     private static Pawn? is_up;
 
@@ -70,9 +73,14 @@ public static class Chatter
             }
 
             // Start the talk
-            chat.AIChat = chat.Talk(Settings.TextAPIKey.Value);
+            chat.AIChat = chat.Talk(Settings.TextAPIKey.Value, talked_to);
             is_up = pawn;
             next_talk = DateTime.Now.AddMinutes(1);
+            foreach (LogMessage message in Log.Messages)
+            {
+                Log.Message($"message {message.ToString()}");
+            }
+
             chat.AlreadyPlayed = true;
             Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
             Log.Message($"Next talk: {next_talk}");
@@ -89,7 +97,7 @@ public static class Chatter
             chat.AIChat = null;
             Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
             chat.AlreadyPlayed = false;
-            await chat.Vocalize(result, VoiceDict[pawn]);
+            // await chat.Vocalize(result, VoiceDict[pawn]);
             is_up = null;
         }
         else
@@ -109,10 +117,12 @@ public static class Chatter
             case PlayLogEntry_Interaction interaction:
                 initiator = (Pawn?)Reflection.Verse_PlayLogEntry_Interaction_Initiator.GetValue(interaction);
                 recipient = (Pawn?)Reflection.Verse_PlayLogEntry_Interaction_Recipient.GetValue(interaction);
+                talked_to = recipient;
                 break;
             case PlayLogEntry_InteractionSinglePawn interaction:
                 initiator = (Pawn?)Reflection.Verse_PlayLogEntry_InteractionSinglePawn_Initiator.GetValue(interaction);
                 recipient = null;
+                talked_to = null;
                 break;
             default:
                 return;

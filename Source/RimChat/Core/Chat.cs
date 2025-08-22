@@ -65,10 +65,10 @@ public class Chat(Pawn pawn, LogEntry entry)
         return true;
     }
 
-    public async Task<string> Talk(string chatgpt_api_key)
+    public async Task<string> Talk(string chatgpt_api_key, Pawn? talked_to)
     {
         var text = RemoveColorTag.Replace(Entry.ToGameStringFromPOV(pawn), string.Empty);
-        var response = await GetOpenAIResponseAsync(chatgpt_api_key, text);
+        var response = await GetOpenAIResponseAsync(chatgpt_api_key, text, talked_to);
         // Parse the response JSON and extract output->content->text
         using var doc = JsonDocument.Parse(response);
         var outputArray = doc.RootElement.GetProperty("output");
@@ -91,20 +91,25 @@ public class Chat(Pawn pawn, LogEntry entry)
         return response;
     }
 
-    public async Task<string?> GetOpenAIResponseAsync(string apiKey, string input)
+    public async Task<string?> GetOpenAIResponseAsync(string apiKey, string input, Pawn? talked_to)
     {
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
-
-        string instructions = @$"You are a pawn in Rimworld named {pawn.Name} talking to your fellow crewmate in english.
-Respond to the crewmate in 1 - 3 sentences.
+        var instructions = "";
+        if (talked_to != null)
+        {
+            instructions = @$"You are a pawn in Rimworld named {pawn.Name} talking to your fellow crewmate {talked_to.Name} in english.
+Respond to {talked_to.Name} in 1 - 3 sentences.
 Do not reference objects as if they are nearby, just talk about them in the abstract or as memories.
-Do not speak for the other pawn, only for yourself.";
+Do not speak for the other {talked_to.Name}, only for yourself.
+Here is some history, you crashed {RimWorld.GenDate.DaysPassedSinceSettle} days ago.
+";
 
+        }
         var requestBody = new
         {
             model = "gpt-5",
-            input = input,
+            input = $"just make some casual conversation as {pawn.Name}",
             instructions = instructions,
         };
 
