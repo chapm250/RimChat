@@ -19,7 +19,8 @@ public class Chat(Pawn pawn, LogEntry entry)
 
     public Task<string>? AIChat { get; set; }
 
-    public System.DateTime LastTalked { get; set; }
+    public bool AlreadyPlayed { get; set; } = false;
+
 
     public async Task<bool> Vocalize(string whatWasSaid)
     {
@@ -38,7 +39,7 @@ public class Chat(Pawn pawn, LogEntry entry)
 
         // Request WAV output for easier Unity playback
         var response = await client.PostAsync(
-            "https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=pcm_16000",
+            "https://api.elevenlabs.io/v1/text-to-speech/exsUS4vynmxd379XN4yO?output_format=pcm_16000",
             content);
 
         if (!response.IsSuccessStatusCode)
@@ -64,7 +65,7 @@ public class Chat(Pawn pawn, LogEntry entry)
         return true;
     }
 
-    public async Task<string> Talk(bool isSelected, string chatgpt_api_key)
+    public async Task<string> Talk(string chatgpt_api_key)
     {
         var text = RemoveColorTag.Replace(Entry.ToGameStringFromPOV(pawn), string.Empty);
         var response = await GetOpenAIResponseAsync(chatgpt_api_key, text);
@@ -95,10 +96,10 @@ public class Chat(Pawn pawn, LogEntry entry)
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 
-        string instructions = @"You are a pawn in Rimworld named Sancho talking to his wife Mando in english.
-Respond to Mando in 1 - 3 sentences.
+        string instructions = @$"You are a pawn in Rimworld named {pawn.Name} talking to your fellow crewmate in english.
+Respond to the crewmate in 1 - 3 sentences.
 Do not reference objects as if they are nearby, just talk about them in the abstract or as memories.
-Do not speak for Mando";
+Do not speak for the other pawn, only for yourself.";
 
         var requestBody = new
         {

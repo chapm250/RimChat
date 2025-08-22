@@ -14,6 +14,7 @@ using RimWorld.Planet;
 using Verse;
 using HarmonyLib;
 using System.Configuration;
+using Unity.Burst.Intrinsics;
 
 namespace RimChat.Core;
 
@@ -23,6 +24,9 @@ public static class Chatter
     private static bool CanRender() => WorldRendererUtility.CurrentWorldRenderMode is WorldRenderMode.None or WorldRenderMode.Background;
     private static Dictionary<Pawn, Chat> Dictionary = new();
     private static System.DateTime next_talk = DateTime.Now;
+
+    private static Pawn? is_up;
+
     public static void Talk()
     {
         var altitude = GetAltitude();
@@ -30,16 +34,27 @@ public static class Chatter
 
         var selected = Find.Selector!.SingleSelectedObject as Pawn;
 
-        foreach (var pawn in Dictionary.Keys.OrderBy(pawn => pawn == selected).ThenBy(static pawn => pawn.Position.y).ToArray()) { DrawBubble(pawn, pawn == selected); }
+        DrawBubble();
     }
 
-    private static async Task DrawBubble(Pawn pawn, bool isSelected)
+    private static async Task DrawBubble()
     {
+        var candidates = Dictionary.Where(kvp => !kvp.Value.AlreadyPlayed).ToList();
+        if (candidates.Count == 0) return;
+        var random = new System.Random();
+        var randomEntry = candidates[random.Next(candidates.Count)];
+        var pawn = randomEntry.Key;
+        var chat = randomEntry.Value;
+
+        if (is_up != null)
+        {
+            pawn = randomEntry.Key;
+            chat = Dictionary[is_up];
+        }
         if (!CanRender() || !pawn.Spawned || pawn.Map != Find.CurrentMap || pawn.Map!.fogGrid!.IsFogged(pawn.Position)) { return; }
 
-        var random = new System.Random();
-        var randomEntry = Dictionary.ElementAt(random.Next(Dictionary.Count));
-        var chat = randomEntry.Value;
+
+
         if (chat.AIChat == null && DateTime.Now > next_talk)
         {
             // If the chat has not been talked about yet, start the talk
@@ -50,8 +65,11 @@ public static class Chatter
             }
 
             // Start the talk
-            chat.AIChat = chat.Talk(isSelected, Settings.TextAPIKey.Value);
+            chat.AIChat = chat.Talk(Settings.TextAPIKey.Value);
+            is_up = pawn;
             next_talk = DateTime.Now.AddMinutes(1);
+            chat.AlreadyPlayed = true;
+            Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
             Log.Message($"Next talk: {next_talk}");
         }
         else if (chat.AIChat is not null && !chat.AIChat.IsCompleted)
@@ -63,9 +81,10 @@ public static class Chatter
         {
             var result = chat.AIChat.Result;
             Log.Message($"Returned text: {result}");
-            Log.Message($"Started chat for {pawn.Name} with entry {chat.Entry.Tick} at {chat.LastTalked}");
             chat.AIChat = null;
+            Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
             await chat.Vocalize(result);
+            is_up = null;
         }
         else
         {
