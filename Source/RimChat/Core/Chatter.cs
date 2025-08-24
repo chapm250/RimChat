@@ -18,6 +18,7 @@ using Unity.Burst.Intrinsics;
 using System.EnterpriseServices;
 using UnityEngine.PlayerLoop;
 using RimWorld.BaseGen;
+using Verse.Sound;
 
 namespace RimChat.Core;
 
@@ -94,12 +95,18 @@ public static class Chatter
             chat.AIChat = null;
             Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
             chat.AlreadyPlayed = false;
-            // await chat.Vocalize(result, VoiceDict[pawn]);
+            await chat.Vocalize(result, VoiceDict[pawn]);
             is_up = null;
+        }
+        else if (!chat.AudioSource.isPlaying && !chat.MusicReset)
+        {
+            Prefs.VolumeMusic = chat.MusicVol;
+            Prefs.Apply();
+            Prefs.Save();
+            chat.MusicReset = true;
         }
         else
         {
-            // Message has been completed, remove it
             return;
         }
     }

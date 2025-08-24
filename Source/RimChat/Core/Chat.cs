@@ -24,6 +24,10 @@ public class Chat(Pawn pawn, LogEntry entry)
 
     public string KindOfTalk { get; set; }
 
+    public float MusicVol { get; set; }
+
+    public bool MusicReset { get; set; } = true;
+
     public bool AlreadyPlayed { get; set; } = false;
 
 
@@ -62,9 +66,17 @@ public class Chat(Pawn pawn, LogEntry entry)
         var audioClip = WavUtility.ToAudioClip(audioBytes, "VocalizedText");
         var audioSource = new GameObject("VocalizedAudioSource").AddComponent<AudioSource>();
         audioSource.clip = audioClip;
+        audioSource.volume = 1f;
         AudioSource = audioSource;
-
+        MusicVol = Prefs.VolumeMusic;
+        Prefs.VolumeMusic = 0.05f;
+        Prefs.Apply();
+        Prefs.Save();
         AudioSource.Play();
+        MusicReset = false;
+        // Prefs.VolumeMusic = vol;
+        // Prefs.Apply();
+        // Prefs.Save();
 
         Log.Message($"Received {audioBytes.Length} bytes of audio data.");
         return true;
