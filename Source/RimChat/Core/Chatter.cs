@@ -74,14 +74,13 @@ public static class Chatter
             }
 
             // Start the talk
-            chat.AIChat = chat.Talk(Settings.TextAPIKey.Value, talked_to);
+            chat.AIChat = chat.Talk(Settings.TextAPIKey.Value, talked_to, Find.History.archive.ArchivablesListForReading);
             is_up = pawn;
             next_talk = DateTime.Now.AddMinutes(1);
 
             chat.AlreadyPlayed = true;
             Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
             Log.Message($"Next talk: {next_talk}");
-            Log.Message($"maybe letters? {Find.History.archive.ArchivablesListForReading[0].ArchivedLabel}");
         }
         else if (chat.AIChat is not null && !chat.AIChat.IsCompleted)
         {

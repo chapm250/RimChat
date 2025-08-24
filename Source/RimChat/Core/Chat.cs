@@ -7,6 +7,9 @@ using UnityEngine;
 using Verse;
 using System.EnterpriseServices;
 using System.Net;
+using System.Collections.Generic;
+using System.Linq;
+using RimWorld;
 
 namespace RimChat.Core;
 
@@ -65,10 +68,13 @@ public class Chat(Pawn pawn, LogEntry entry)
         return true;
     }
 
-    public async Task<string> Talk(string chatgpt_api_key, Pawn? talked_to)
+    public async Task<string> Talk(string chatgpt_api_key, Pawn? talked_to, List<IArchivable> history)
     {
         var text = RemoveColorTag.Replace(Entry.ToGameStringFromPOV(pawn), string.Empty);
-        var response = await GetOpenAIResponseAsync(chatgpt_api_key, text, talked_to);
+        var all_history = string.Join("\n", history.Select(item => item.ArchivedLabel));
+
+        var response = await GetOpenAIResponseAsync(chatgpt_api_key, text, talked_to, all_history);
+
         // Parse the response JSON and extract output->content->text
         using var doc = JsonDocument.Parse(response);
         var outputArray = doc.RootElement.GetProperty("output");
@@ -91,7 +97,7 @@ public class Chat(Pawn pawn, LogEntry entry)
         return response;
     }
 
-    public async Task<string?> GetOpenAIResponseAsync(string apiKey, string input, Pawn? talked_to)
+    public async Task<string?> GetOpenAIResponseAsync(string apiKey, string input, Pawn? talked_to, string all_history)
     {
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
@@ -103,6 +109,8 @@ Respond to {talked_to.Name} in 1 - 3 sentences.
 Do not reference objects as if they are nearby, just talk about them in the abstract or as memories.
 Do not speak for the other {talked_to.Name}, only for yourself.
 Here is some history, you crashed {RimWorld.GenDate.DaysPassedSinceSettle} days ago.
+The following are some recent events:
+{all_history}
 ";
 
         }
