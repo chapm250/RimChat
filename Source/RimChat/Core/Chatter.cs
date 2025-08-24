@@ -81,7 +81,7 @@ public static class Chatter
             chat.AlreadyPlayed = true;
             Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
             Log.Message($"Next talk: {next_talk}");
-            Log.Message($"maybe letters? {Find.LetterStack.LettersListForReading[0].Label}");
+            Log.Message($"maybe letters? {Find.History.archive.ArchivablesListForReading[0].ArchivedLabel}");
         }
         else if (chat.AIChat is not null && !chat.AIChat.IsCompleted)
         {
