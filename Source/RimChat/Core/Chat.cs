@@ -99,14 +99,17 @@ public class Chat(Pawn pawn, LogEntry entry)
         return response;
     }
 
-    public async Task<string?> GetOpenAIResponseAsync(string apiKey, string input, Pawn? talked_to, string all_history)
+    public async Task<string?> GetOpenAIResponseAsync(string apiKey, Pawn? talked_to, string all_history)
     {
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
         var instructions = "";
+        var input = "";
+
+
         if (talked_to != null)
         {
-            instructions = @$"You are a pawn in Rimworld named {pawn.Name} talking to your fellow crewmate {talked_to.Name} in english.
+            instructions = @$"You are a pawn in Rimworld named {pawn.Name} talking to {talked_to.Name} in english.
 Respond to {talked_to.Name} in 1 - 3 sentences.
 Do not reference objects as if they are nearby, just talk about them in the abstract or as memories.
 Do not speak for the other {talked_to.Name}, only for yourself.
@@ -115,12 +118,60 @@ The following are some recent events:
 {all_history}
 ";
 
+            switch (KindOfTalk)
+            {
+                case "ChitChat":
+                    input = $"you make some casual conversation with you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "DeepTalk":
+                    input = $"you talk about a deep subject with you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "Slight":
+                    input = $"you say something to slight you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "Insult":
+                    input = $"you say kind words to you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "AnimalChat":
+                    input = $"you chat with the animal {talked_to.Name}";
+                    break;
+                case "TameAttempt":
+                    input = $"you say something to try and tame the animal {talked_to.Name}";
+                    break;
+                case "TrainAttempt":
+                    input = $"you say something to try and train the animal {talked_to.Name}";
+                    break;
+                case "Nuzzle":
+                    input = $"you say something to the animal {talked_to.Name} who is nuzzling you";
+                    break;
+                case "ReleaseToWild":
+                    input = $"you say something to the animal {talked_to.Name} who you are releasing";
+                    break;
+                case "BuildRapport":
+                    input = $"you say something to the prisoner {talked_to.Name} to try and build rapport";
+                    break;
+                case "RecruitAttempt":
+                    input = $"you say something to the prisoner {talked_to.Name} to try and recruit them";
+                    break;
+                case "SparkJailbreak":
+                    input = $"you are a prisoner talking with you're fellow prisoner {talked_to.Name} to get them to rebel";
+                    break;
+                case "RomanceAttempt":
+                    input = $"you say something to try to romance {talked_to.Name}";
+                    break;
+                case "MarriageProposal":
+                    input = $"you say something to try to get {talked_to.Name} to marry you";
+                    break;
+                case "Breakup":
+                    input = $"you are breaking up with {talked_to.Name}";
+                    break;
+            }
         }
         var requestBody = new
         {
             model = "gpt-5",
-            input = $"just make some casual conversation as {pawn.Name}",
-            instructions = instructions,
+            input,
+            instructions,
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
