@@ -108,22 +108,27 @@ public static class Chatter
         if (!CanRender()) { return; }
 
         Pawn? initiator, recipient;
+        InteractionDef kind_of_talk;
 
         switch (entry)
         {
             case PlayLogEntry_Interaction interaction:
                 initiator = (Pawn?)Reflection.Verse_PlayLogEntry_Interaction_Initiator.GetValue(interaction);
                 recipient = (Pawn?)Reflection.Verse_PlayLogEntry_Interaction_Recipient.GetValue(interaction);
+                kind_of_talk = (InteractionDef?)Reflection.Verse_PlayLogEntry_Interaction_Type.GetValue(interaction);
                 talked_to = recipient;
                 break;
             case PlayLogEntry_InteractionSinglePawn interaction:
                 initiator = (Pawn?)Reflection.Verse_PlayLogEntry_InteractionSinglePawn_Initiator.GetValue(interaction);
+                kind_of_talk = (InteractionDef?)Reflection.Verse_PlayLogEntry_Interaction_Type.GetValue(interaction);
                 recipient = null;
                 talked_to = null;
                 break;
             default:
                 return;
         }
+
+
 
         if (initiator is null || initiator.Map != Find.CurrentMap) { return; }
 
@@ -132,6 +137,7 @@ public static class Chatter
         else
         {
             Dictionary[initiator].Entry = entry;
+
         }
 
         string pawn_sex = initiator.gender.ToString();
