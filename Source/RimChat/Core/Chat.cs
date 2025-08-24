@@ -112,7 +112,7 @@ public class Chat(Pawn pawn, LogEntry entry)
             instructions = @$"You are a pawn in Rimworld named {pawn.Name} talking to {talked_to.Name} in english.
 Respond to {talked_to.Name} in 1 - 3 sentences.
 Do not reference objects as if they are nearby, just talk about them in the abstract or as memories.
-Do not speak for the other {talked_to.Name}, only for yourself.
+Do not speak for the other pawn {talked_to.Name}, only for yourself.
 Here is some history, you crashed {RimWorld.GenDate.DaysPassedSinceSettle} days ago.
 The following are some recent events:
 {all_history}
