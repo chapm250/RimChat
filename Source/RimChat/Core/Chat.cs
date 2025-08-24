@@ -75,7 +75,7 @@ public class Chat(Pawn pawn, LogEntry entry)
         var text = RemoveColorTag.Replace(Entry.ToGameStringFromPOV(pawn), string.Empty);
         var all_history = string.Join("\n", history.Select(item => item.ArchivedLabel));
 
-        var response = await GetOpenAIResponseAsync(chatgpt_api_key, text, talked_to, all_history);
+        var response = await GetOpenAIResponseAsync(chatgpt_api_key, talked_to, all_history);
 
         // Parse the response JSON and extract output->content->text
         using var doc = JsonDocument.Parse(response);
@@ -120,7 +120,7 @@ The following are some recent events:
 
             switch (KindOfTalk)
             {
-                case "ChitChat":
+                case "Chitchat":
                     input = $"you make some casual conversation with you're fellow crewmate {talked_to.Name}";
                     break;
                 case "DeepTalk":
