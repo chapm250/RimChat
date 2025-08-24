@@ -22,6 +22,8 @@ public class Chat(Pawn pawn, LogEntry entry)
 
     public Task<string>? AIChat { get; set; }
 
+    public string KindOfTalk { get; set; }
+
     public bool AlreadyPlayed { get; set; } = false;
 
 

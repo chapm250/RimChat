@@ -129,14 +129,18 @@ public static class Chatter
         }
 
 
-
         if (initiator is null || initiator.Map != Find.CurrentMap) { return; }
 
 
-        if (!Dictionary.ContainsKey(initiator)) { Dictionary[initiator] = new Chat(initiator, entry); }
+        if (!Dictionary.ContainsKey(initiator))
+        {
+            Dictionary[initiator] = new Chat(initiator, entry);
+            Dictionary[initiator].KindOfTalk = kind_of_talk.defName;
+        }
         else
         {
             Dictionary[initiator].Entry = entry;
+            Dictionary[initiator].KindOfTalk = kind_of_talk.defName;
 
         }
 
