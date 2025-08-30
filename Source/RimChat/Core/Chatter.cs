@@ -24,13 +24,11 @@ namespace RimChat.Core;
 
 public static class Chatter
 {
-    private static readonly string[] male_voices = { "NYkjXRso4QIcgWakN1Cr", "XjLkpWUlnhS8i7gGz3lZ", "zNsotODqUhvbJ5wMG7Ei", "MFZUKuGQUsGJPQjTS4wC", "4dZr8J4CBeokyRkTRpoN" };
-    private static readonly string[] female_voices = { "4tRn1lSkEn13EVTuqb0g", "eUdJpUEN3EslrgE24PKx", "kNie5n4lYl7TrvqBZ4iG", "g6xIsTj2HwM6VR4iXFCw", "jqcCZkN6Knx8BJ5TBdYR" };
     private const float LabelPositionOffset = -0.6f;
     private static bool CanRender() => WorldRendererUtility.CurrentWorldRenderMode is WorldRenderMode.None or WorldRenderMode.Background;
     private static Dictionary<Pawn, Chat> Dictionary = new();
 
-    private static Dictionary<Pawn, string> VoiceDict = new();
+    // private static Dictionary<Pawn, string> VoiceDict = new();
     private static System.DateTime next_talk = DateTime.Now;
 
     private static Pawn? talked_to;
@@ -43,11 +41,10 @@ public static class Chatter
         if (altitude <= 0 || altitude > 40) { return; }
 
         var selected = Find.Selector!.SingleSelectedObject as Pawn;
-
-        DrawBubble();
+        StartTalk();
     }
 
-    private static async Task DrawBubble()
+    private static async Task StartTalk()
     {
         var candidates = Dictionary.Where(kvp => !kvp.Value.AlreadyPlayed).ToList();
         if (candidates.Count == 0) return;
@@ -55,6 +52,7 @@ public static class Chatter
         var randomEntry = candidates[random.Next(candidates.Count)];
         var pawn = randomEntry.Key;
         var chat = randomEntry.Value;
+        if (chat.Entry == null) return;
 
         if (is_up != null)
         {
@@ -80,7 +78,6 @@ public static class Chatter
             next_talk = DateTime.Now.AddMinutes(1);
 
             chat.AlreadyPlayed = true;
-            Log.Message($"chat: {chat.Entry} voice dict {VoiceDict[pawn]}");
             Log.Message($"Next talk: {next_talk}");
         }
         else if (chat.AIChat is not null && !chat.AIChat.IsCompleted)
@@ -94,9 +91,12 @@ public static class Chatter
             Log.Message($"Returned text: {result}");
             chat.AIChat = null;
             talked_to = null;
-            Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
+                
+            var db = VoiceWorldComp.Get();
+            Log.Message($"chat: {chat.Entry}  pawn: {chat.pawn.Name} is_up: {is_up}");
             chat.AlreadyPlayed = false;
-            await chat.Vocalize(result, VoiceDict[]);
+            Log.Message($"chat: {result} voice dict {db.GetVoice(pawn)}");
+            await chat.Vocalize(result, db.GetVoice(pawn));
             is_up = null;
         }
         else if (!chat.AudioSource.isPlaying && !chat.MusicReset)
@@ -126,12 +126,12 @@ public static class Chatter
                 kind_of_talk = (InteractionDef?)Reflection.Verse_PlayLogEntry_Interaction_Type.GetValue(interaction);
                 talked_to = recipient;
                 break;
-            case PlayLogEntry_InteractionSinglePawn interaction:
-                initiator = (Pawn?)Reflection.Verse_PlayLogEntry_InteractionSinglePawn_Initiator.GetValue(interaction);
-                kind_of_talk = (InteractionDef?)Reflection.Verse_PlayLogEntry_Interaction_Type.GetValue(interaction);
-                recipient = null;
-                talked_to = null;
-                break;
+            // case PlayLogEntry_InteractionSinglePawn interaction:
+                // initiator = (Pawn?)Reflection.Verse_PlayLogEntry_InteractionSinglePawn_Initiator.GetValue(interaction);
+                // kind_of_talk = (InteractionDef?)Reflection.Verse_PlayLogEntry_Interaction_Type.GetValue(interaction);
+                // recipient = null;
+                // talked_to = null;
+                // break;
             default:
                 return;
         }
@@ -139,59 +139,30 @@ public static class Chatter
 
         if (initiator is null || initiator.Map != Find.CurrentMap) { return; }
 
-
-        if (!Dictionary.ContainsKey(initiator))
+        if (talked_to != null)
         {
-            Dictionary[initiator] = new Chat(initiator, entry);
-            Dictionary[initiator].KindOfTalk = kind_of_talk.defName;
-        }
-        else
-        {
-            Dictionary[initiator].Entry = entry;
-            Dictionary[initiator].KindOfTalk = kind_of_talk.defName;
-
-        }
-
-        string pawn_sex = initiator.gender.ToString();
-
-        if (!VoiceDict.ContainsKey(initiator))
-        {
-            if (pawn_sex == "Female")
+            if (!Dictionary.ContainsKey(initiator))
             {
-                var random = new System.Random();
-                string voice;
-                var assignedVoices = VoiceDict.Values.ToHashSet();
-                var availableVoices = female_voices.Where(v => !assignedVoices.Contains(v)).ToList();
-                if (availableVoices.Count > 0)
-                {
-                    voice = availableVoices[random.Next(availableVoices.Count)];
-                }
-                else
-                {
-                    voice = female_voices[random.Next(female_voices.Length)];
-                }
-                Log.Message($"Setting female voice for {initiator} who is a {pawn_sex} to {voice}");
-                VoiceDict[initiator] = voice;
+                Dictionary[initiator] = new Chat(initiator, entry);
+                Dictionary[initiator].KindOfTalk = kind_of_talk.defName;
             }
             else
             {
-
-                var random = new System.Random();
-                string voice;
-                var assignedVoices = VoiceDict.Values.ToHashSet();
-                var availableVoices = male_voices.Where(v => !assignedVoices.Contains(v)).ToList();
-                if (availableVoices.Count > 0)
-                {
-                    voice = availableVoices[random.Next(availableVoices.Count)];
-                }
-                else
-                {
-                    voice = male_voices[random.Next(male_voices.Length)];
-                }
-                Log.Message($"Setting male voice for {initiator} who is a {pawn_sex} to {voice}");
-                VoiceDict[initiator] = voice;
+                Dictionary[initiator].Entry = entry;
+                Dictionary[initiator].KindOfTalk = kind_of_talk.defName;
 
             }
+
+            var db = VoiceWorldComp.Get();
+
+            Log.Message($"get voice value {db.GetVoice((initiator))}");
+
+            if (db.GetVoice(initiator) == "" ||  db.GetVoice(initiator) == null)
+            {
+                db.TryAssignRandomVoice(initiator);
+            }
+            
+            Log.Message($"get voice value after {db.GetVoice((initiator))}");
         }
 
     }
@@ -202,4 +173,175 @@ public static class Chatter
 
         return altitude;
     }
+}
+
+
+public class VoiceWorldComp : WorldComponent
+{
+    // --- Configurable pools (you can fill these from defs/settings) ---
+    // Case-insensitive comparisons so "Baritone" == "baritone".
+    private HashSet<string> malePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    { "NYkjXRso4QIcgWakN1Cr", "XjLkpWUlnhS8i7gGz3lZ", "zNsotODqUhvbJ5wMG7Ei", "MFZUKuGQUsGJPQjTS4wC", "4dZr8J4CBeokyRkTRpoN" };
+
+    private HashSet<string> femalePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {  "4tRn1lSkEn13EVTuqb0g", "eUdJpUEN3EslrgE24PKx", "kNie5n4lYl7TrvqBZ4iG", "g6xIsTj2HwM6VR4iXFCw", "jqcCZkN6Knx8BJ5TBdYR"  };
+    
+
+    // --- Main storage: pawn -> voice ---
+    private Dictionary<Pawn, string> pawnVoices = new Dictionary<Pawn, string>();
+    // Reverse index ensures uniqueness: voice -> owner
+    private Dictionary<string, Pawn> voiceIndex = new Dictionary<string, Pawn>(StringComparer.OrdinalIgnoreCase);
+
+    // Scribe helpers
+    private List<Pawn> _keys;
+    private List<string> _vals;
+
+    public VoiceWorldComp(World world) : base(world) { }
+
+    public override void ExposeData()
+    {
+        base.ExposeData();
+
+        // Save the assignments
+        Scribe_Collections.Look(ref pawnVoices, "pawnVoices",
+            LookMode.Reference, LookMode.Value, ref _keys, ref _vals);
+
+        // Optional: persist your pools (uncomment if you want them saved per-world)
+        // Scribe_Collections.Look(ref malePool, "malePool", LookMode.Value);
+        // Scribe_Collections.Look(ref femalePool, "femalePool", LookMode.Value);
+
+        if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            RebuildIndexAndPrune();
+    }
+
+    private void RebuildIndexAndPrune()
+    {
+        voiceIndex.Clear();
+        var toRemove = new List<Pawn>();
+
+        foreach (var kv in pawnVoices)
+        {
+            var p = kv.Key;
+            var v = kv.Value;
+
+            if (!IsValidHumanlike(p) || string.IsNullOrWhiteSpace(v))
+            {
+                toRemove.Add(p);
+                continue;
+            }
+
+            // First owner wins; if two pawns were serialized with the same voice, keep one.
+            if (!voiceIndex.ContainsKey(v))
+                voiceIndex[v] = p;
+        }
+
+        foreach (var p in toRemove)
+            pawnVoices.Remove(p);
+    }
+
+    private static bool IsValidHumanlike(Pawn p) =>
+        p != null && p.RaceProps?.Humanlike == true && !p.DestroyedOrNull();
+
+    private IEnumerable<string> PoolFor(Pawn p)
+    {
+        if (p?.gender == Gender.Male) return malePool;
+        if (p?.gender == Gender.Female) return femalePool;
+        // Gender.None or unknown → use union (distinct)
+        return malePool.Concat(femalePool).Distinct(StringComparer.OrdinalIgnoreCase);
+    }
+
+    // ---------- Read API ----------
+    public string GetVoice(Pawn p) =>
+        p != null && pawnVoices.TryGetValue(p, out var v) ? v : null;
+
+    public bool IsVoiceFree(string voice) => !voiceIndex.ContainsKey(voice);
+
+    public Pawn OwnerOfVoice(string voice) =>
+        voiceIndex.TryGetValue(voice, out var owner) ? owner : null;
+
+    // Snapshot for UI (read-only copy)
+    public IReadOnlyDictionary<Pawn, string> Snapshot() =>
+        new Dictionary<Pawn, string>(pawnVoices);
+
+    // ---------- Write API (enforces uniqueness) ----------
+    public bool TryAssignVoice(Pawn p, string voice, bool stealIfTaken = false)
+    {
+        if (!IsValidHumanlike(p)) return false;
+        if (string.IsNullOrWhiteSpace(voice))
+        {
+            UnassignVoice(p);
+            return true;
+        }
+
+        // already has it?
+        if (pawnVoices.TryGetValue(p, out var current) &&
+            string.Equals(current, voice, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (voiceIndex.TryGetValue(voice, out var other) && other != p)
+        {
+            if (!stealIfTaken) return false; // uniqueness violation
+            // Steal: remove from previous owner
+            UnassignVoice(other);
+        }
+
+        // update indices
+        if (current != null) voiceIndex.Remove(current);
+        pawnVoices[p] = voice;
+        voiceIndex[voice] = p;
+        return true;
+    }
+
+    public void UnassignVoice(Pawn p)
+    {
+        if (p == null) return;
+        if (pawnVoices.TryGetValue(p, out var old))
+        {
+            pawnVoices.Remove(p);
+            if (old != null) voiceIndex.Remove(old);
+        }
+    }
+
+    /// Assigns a random voice from the appropriate pool.
+    /// - Prefers unused voices.
+    /// - If none are free, will "steal" a random one from someone else to keep uniqueness.
+    ///   (If you prefer duplicates when exhausted, see the commented branch below.)
+    public bool TryAssignRandomVoice(Pawn p)
+    {
+        if (!IsValidHumanlike(p)) return false;
+
+        var pool = PoolFor(p).ToList();
+        if (pool.Count == 0) return false;
+
+        // free voices from the pool
+        var free = pool.Where(v => !voiceIndex.ContainsKey(v)).ToList();
+
+        string pick;
+        if (free.Count > 0)
+        {
+            pick = free.RandomElement();
+            return TryAssignVoice(p, pick, stealIfTaken: false);
+        }
+        else
+        {
+            // Exhausted: pick any voice from the pool
+            pick = pool.RandomElement();
+
+            // Option A (default): STEAL to preserve uniqueness
+            // return TryAssignVoice(p, pick, stealIfTaken: true);
+
+            // Option B: ALLOW DUPLICATE (comment above line, uncomment below)
+            pawnVoices[p] = pick; // duplicate allowed
+            return true;
+        }
+    }
+
+    // Optional: call this periodically or when pawns die/leave to free voices
+    public void PruneDeadOrInvalidOwners()
+    {
+        var toUnassign = pawnVoices.Keys.Where(p => !IsValidHumanlike(p)).ToList();
+        foreach (var p in toUnassign) UnassignVoice(p);
+    }
+
+    public static VoiceWorldComp Get() => Find.World.GetComponent<VoiceWorldComp>();
 }

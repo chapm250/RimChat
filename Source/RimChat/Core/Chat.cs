@@ -22,7 +22,9 @@ public class Chat(Pawn pawn, LogEntry entry)
 
     public Task<string>? AIChat { get; set; }
 
-    public string KindOfTalk { get; set; }
+    public string? KindOfTalk { get; set; }
+
+    public Pawn? pawn { get; set; } = pawn;
 
     public float MusicVol { get; set; }
 
