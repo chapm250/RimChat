@@ -25,7 +25,7 @@ namespace RimChat.Core;
 public static class Chatter
 {
     private static readonly string[] male_voices = { "NYkjXRso4QIcgWakN1Cr", "XjLkpWUlnhS8i7gGz3lZ", "zNsotODqUhvbJ5wMG7Ei", "MFZUKuGQUsGJPQjTS4wC", "4dZr8J4CBeokyRkTRpoN" };
-    private static readonly string[] female_voices = { "eUdJpUEN3EslrgE24PKx", "kNie5n4lYl7TrvqBZ4iG", "g6xIsTj2HwM6VR4iXFCw", "jqcCZkN6Knx8BJ5TBdYR" };
+    private static readonly string[] female_voices = { "4tRn1lSkEn13EVTuqb0g", "eUdJpUEN3EslrgE24PKx", "kNie5n4lYl7TrvqBZ4iG", "g6xIsTj2HwM6VR4iXFCw", "jqcCZkN6Knx8BJ5TBdYR" };
     private const float LabelPositionOffset = -0.6f;
     private static bool CanRender() => WorldRendererUtility.CurrentWorldRenderMode is WorldRenderMode.None or WorldRenderMode.Background;
     private static Dictionary<Pawn, Chat> Dictionary = new();
@@ -65,7 +65,7 @@ public static class Chatter
 
 
 
-        if (chat.AIChat == null && DateTime.Now > next_talk)
+        if (chat.AIChat == null && DateTime.Now > next_talk && talked_to != null)
         {
             // If the chat has not been talked about yet, start the talk
             if (chat.Entry is PlayLogEntry_Interaction interaction)
@@ -80,7 +80,7 @@ public static class Chatter
             next_talk = DateTime.Now.AddMinutes(1);
 
             chat.AlreadyPlayed = true;
-            Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
+            Log.Message($"chat: {chat.Entry} voice dict {VoiceDict[pawn]}");
             Log.Message($"Next talk: {next_talk}");
         }
         else if (chat.AIChat is not null && !chat.AIChat.IsCompleted)
@@ -93,9 +93,10 @@ public static class Chatter
             var result = chat.AIChat.Result;
             Log.Message($"Returned text: {result}");
             chat.AIChat = null;
+            talked_to = null;
             Log.Message($"chat: {chat.Entry}  pawn: {pawn} is_up: {is_up}");
             chat.AlreadyPlayed = false;
-            await chat.Vocalize(result, VoiceDict[pawn]);
+            await chat.Vocalize(result, VoiceDict[]);
             is_up = null;
         }
         else if (!chat.AudioSource.isPlaying && !chat.MusicReset)
@@ -169,6 +170,7 @@ public static class Chatter
                 {
                     voice = female_voices[random.Next(female_voices.Length)];
                 }
+                Log.Message($"Setting female voice for {initiator} who is a {pawn_sex} to {voice}");
                 VoiceDict[initiator] = voice;
             }
             else
@@ -186,6 +188,7 @@ public static class Chatter
                 {
                     voice = male_voices[random.Next(male_voices.Length)];
                 }
+                Log.Message($"Setting male voice for {initiator} who is a {pawn_sex} to {voice}");
                 VoiceDict[initiator] = voice;
 
             }

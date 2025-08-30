@@ -30,6 +30,7 @@ public class Chat(Pawn pawn, LogEntry entry)
 
     public bool AlreadyPlayed { get; set; } = false;
 
+    public bool current_up { get; set; } = false;
 
     public async Task<bool> Vocalize(string whatWasSaid, string voiceID)
     {
@@ -45,7 +46,7 @@ public class Chat(Pawn pawn, LogEntry entry)
 
         var json = JsonSerializer.Serialize(requestBody);
         var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
+        Log.Message($"{whatWasSaid} for the {entry} for the pawn {pawn} using the voiceid {voiceID}");
         // Request WAV output for easier Unity playback
         var response = await client.PostAsync(
             $"https://api.elevenlabs.io/v1/text-to-speech/{voiceID}?output_format=pcm_16000",
@@ -142,6 +143,9 @@ The following are some recent events:
                     input = $"you say something to slight you're fellow crewmate {talked_to.Name}";
                     break;
                 case "Insult":
+                    input = $"you say something to insult you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "KindWords":
                     input = $"you say kind words to you're fellow crewmate {talked_to.Name}";
                     break;
                 case "AnimalChat":

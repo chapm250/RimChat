@@ -22,5 +22,6 @@
     <PackageReference Include="Lib.Harmony" Version="2.3.6">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
+    <PackageReference Include="System.Text.Json" Version="9.0.8" />
   </ItemGroup>
 </Project>
