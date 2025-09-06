@@ -34,6 +34,7 @@ public static class Chatter
     private static Pawn? talked_to;
 
     private static Pawn? is_up;
+    // eUd, XjL, jqc
 
     public static void Talk()
     {
@@ -46,13 +47,12 @@ public static class Chatter
 
     private static async Task StartTalk()
     {
-        var candidates = Dictionary.Where(kvp => !kvp.Value.AlreadyPlayed).ToList();
+        var candidates = Dictionary.Where(kvp => !kvp.Value.AlreadyPlayed && kvp.Value.Entry != null).ToList();
         if (candidates.Count == 0) return;
         var random = new System.Random();
         var randomEntry = candidates[random.Next(candidates.Count)];
         var pawn = randomEntry.Key;
         var chat = randomEntry.Value;
-        if (chat.Entry == null) return;
 
         if (is_up != null)
         {
@@ -60,8 +60,6 @@ public static class Chatter
             chat = Dictionary[is_up];
         }
         if (!CanRender() || !pawn.Spawned || pawn.Map != Find.CurrentMap || pawn.Map!.fogGrid!.IsFogged(pawn.Position)) { return; }
-
-
 
         if (chat.AIChat == null && DateTime.Now > next_talk && talked_to != null)
         {
@@ -126,12 +124,6 @@ public static class Chatter
                 kind_of_talk = (InteractionDef?)Reflection.Verse_PlayLogEntry_Interaction_Type.GetValue(interaction);
                 talked_to = recipient;
                 break;
-            // case PlayLogEntry_InteractionSinglePawn interaction:
-                // initiator = (Pawn?)Reflection.Verse_PlayLogEntry_InteractionSinglePawn_Initiator.GetValue(interaction);
-                // kind_of_talk = (InteractionDef?)Reflection.Verse_PlayLogEntry_Interaction_Type.GetValue(interaction);
-                // recipient = null;
-                // talked_to = null;
-                // break;
             default:
                 return;
         }
@@ -139,7 +131,12 @@ public static class Chatter
 
         if (initiator is null || initiator.Map != Find.CurrentMap) { return; }
 
-        if (talked_to != null)
+        if (talked_to == null ) return;
+
+        var choosenTalk = ChanceUtil.IsSelected(kind_of_talk.defName);
+        Log.Message($"kind of talk {kind_of_talk.defName} choosen: {choosenTalk }");
+
+        if (choosenTalk)
         {
             if (!Dictionary.ContainsKey(initiator))
             {
@@ -150,20 +147,19 @@ public static class Chatter
             {
                 Dictionary[initiator].Entry = entry;
                 Dictionary[initiator].KindOfTalk = kind_of_talk.defName;
-
             }
 
             var db = VoiceWorldComp.Get();
 
             Log.Message($"get voice value {db.GetVoice((initiator))}");
 
-            if (db.GetVoice(initiator) == "" ||  db.GetVoice(initiator) == null)
+            if (db.GetVoice(initiator) == "" || db.GetVoice(initiator) == null)
             {
                 db.TryAssignRandomVoice(initiator);
             }
-            
             Log.Message($"get voice value after {db.GetVoice((initiator))}");
         }
+
 
     }
     private static float GetAltitude()
@@ -191,7 +187,7 @@ public class VoiceWorldComp : WorldComponent
     private Dictionary<Pawn, string> pawnVoices = new Dictionary<Pawn, string>();
     // Reverse index ensures uniqueness: voice -> owner
     private Dictionary<string, Pawn> voiceIndex = new Dictionary<string, Pawn>(StringComparer.OrdinalIgnoreCase);
-
+    
     // Scribe helpers
     private List<Pawn> _keys;
     private List<string> _vals;
@@ -205,13 +201,15 @@ public class VoiceWorldComp : WorldComponent
         // Save the assignments
         Scribe_Collections.Look(ref pawnVoices, "pawnVoices",
             LookMode.Reference, LookMode.Value, ref _keys, ref _vals);
-
-        // Optional: persist your pools (uncomment if you want them saved per-world)
-        // Scribe_Collections.Look(ref malePool, "malePool", LookMode.Value);
-        // Scribe_Collections.Look(ref femalePool, "femalePool", LookMode.Value);
+        Log.Message("pawnVoices");
+        Log.Message(pawnVoices);
 
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
+        {
+
+            Log.Message("Pruning voices?");
             RebuildIndexAndPrune();
+        }
     }
 
     private void RebuildIndexAndPrune()
@@ -344,4 +342,66 @@ public class VoiceWorldComp : WorldComponent
     }
 
     public static VoiceWorldComp Get() => Find.World.GetComponent<VoiceWorldComp>();
+}
+
+public static class ChanceUtil
+{
+    // values: ["a","b","c"], percents: [10,20,30]
+    public static bool IsSelected(string value)
+    {
+         // possible_talks = { "Chitchat", "DeepTalk"};
+         string[] values = new string[]
+         {
+             "Chitchat",
+             "DeepTalk",
+             "Slight",
+             "Insult",
+             "KindWords",
+             "AnimalChat",
+             "TameAttempt",
+             "TrainAttempt",
+             "Nuzzle",
+             "ReleaseToWild",
+             "BuildRapport",
+             "RecruitAttempt",
+             "SparkJailbreak",
+             "RomanceAttempt",
+             "MarriageProposal",
+             "Breakup"
+         };
+         int[] percents =  new int[]
+         {
+             100,
+             10,
+             50,
+             75,
+             50,
+             50,
+             10,
+             10,
+             10,
+             100,
+             90,
+             90,
+             100,
+             100,
+             100,
+             100
+         };
+            
+        if (values == null || percents == null) return false;
+        int n = Math.Min(values.Length, percents.Length);
+
+        for (int i = 0; i < n; i++)
+        {
+            if (string.Equals(values[i], value, StringComparison.OrdinalIgnoreCase))
+            {
+                float p = Clamp01(percents[i] / 100f);
+                return Rand.Value < p; // or Rand.Chance(p)
+            }
+        }
+        return false; // value not found → treat as 0%
+    }
+
+    private static float Clamp01(float x) => x < 0f ? 0f : (x > 1f ? 1f : x);
 }
