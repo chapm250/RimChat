@@ -16,7 +16,7 @@ namespace RimChat.Core;
 public class Chat(Pawn pawn, LogEntry entry)
 {
     private static readonly Regex RemoveColorTag = new("<\\/?color[^>]*>");
-    public LogEntry Entry { get; set; } = entry;
+    public LogEntry? Entry { get; set; } = entry;
 
     public AudioSource? AudioSource { get; private set; }
 
@@ -121,6 +121,8 @@ public class Chat(Pawn pawn, LogEntry entry)
         var instructions = "";
         var input = "";
 
+        var job = pawn.CurJob.def;
+
 
         if (talked_to != null)
         {
@@ -129,7 +131,8 @@ Respond to {talked_to.Name} in 1 - 3 sentences.
 Do not reference objects as if they are nearby, just talk about them in the abstract or as memories.
 Do not speak for the other pawn {talked_to.Name}, only for yourself.
 Here is some history, you crashed {RimWorld.GenDate.DaysPassedSinceSettle} days ago.
-The following are some recent events:
+You are currently doing {job}
+The following are some recent events
 {all_history}
 ";
 
