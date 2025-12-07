@@ -112,8 +112,10 @@ public static class Chatter
     public static void Add(LogEntry entry)
     {
         if (!CanRender()) { return; }
-
+        
         Pawn? initiator, recipient;
+        
+
         InteractionDef kind_of_talk;
 
         switch (entry)
@@ -128,6 +130,10 @@ public static class Chatter
                 return;
         }
 
+        if (!initiator.IsColonistPlayerControlled)
+        {
+            return;
+        }
 
         if (initiator is null || initiator.Map != Find.CurrentMap) { return; }
 
