@@ -61,7 +61,7 @@ public static class Chatter
 
         if (is_up != null)
         {
-            pawn = randomEntry.Key;
+            pawn = is_up;
             chat = Dictionary[is_up];
         }
         if (!CanRender() || !pawn.Spawned || pawn.Map != Find.CurrentMap || pawn.Map!.fogGrid!.IsFogged(pawn.Position)) { return; }
@@ -98,8 +98,8 @@ public static class Chatter
             var db = VoiceWorldComp.Get();
             Log.Message($"chat: {chat.Entry}  pawn: {chat.pawn.Name} is_up: {is_up}");
             chat.AlreadyPlayed = false;
-            Log.Message($"chat: {result} voice dict {db.GetVoice(pawn)}");
-            await chat.Vocalize(result, db.GetVoice(pawn));
+            Log.Message($"chat: {result} voice dict {db.GetVoice(chat.pawn)}");
+            await chat.Vocalize(result, db.GetVoice(chat.pawn));
             is_up = null;
         }
         else if (!chat.AudioSource.isPlaying && !chat.MusicReset)
