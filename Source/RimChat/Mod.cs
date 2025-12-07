@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using HarmonyLib;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -38,6 +40,20 @@ public sealed class Mod : Verse.Mod
 
         listing.Label("Eleven Labs API Key:");
         Settings.VoiceAPIKey.Value = listing.TextEntry(Settings.VoiceAPIKey.Value);
+
+        listing.Gap();
+
+        if (listing.ButtonText($"TTS Provider: {Settings.TTSProviderSetting.Value}"))
+        {
+            var options = new List<FloatMenuOption>();
+            foreach (TTSProvider provider in System.Enum.GetValues(typeof(TTSProvider)))
+            {
+                options.Add(new FloatMenuOption(provider.ToString(), () => {
+                    Settings.TTSProviderSetting.Value = provider;
+                }));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
 
         listing.End();
         base.DoSettingsWindowContents(inRect);

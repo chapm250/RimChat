@@ -98,8 +98,18 @@ public static class Chatter
             var db = VoiceWorldComp.Get();
             Log.Message($"chat: {chat.Entry}  pawn: {chat.pawn.Name} is_up: {is_up}");
             chat.AlreadyPlayed = false;
-            Log.Message($"chat: {result} voice dict {db.GetVoice(chat.pawn)}");
-            await chat.Vocalize(result, db.GetVoice(chat.pawn));
+            var voice = db.GetVoice(chat.pawn);
+            Log.Message($"chat: {result} voice dict {voice}");
+
+            if (Settings.TTSProviderSetting.Value == TTSProvider.OpenAI)
+            {
+                await chat.VocalizeOpenAI(result, voice);
+            }
+            else
+            {
+                await chat.Vocalize(result, voice);
+            }
+
             is_up = null;
         }
         else if (!chat.AudioSource.isPlaying && !chat.MusicReset)
@@ -185,14 +195,20 @@ public static class Chatter
 
 public class VoiceWorldComp : WorldComponent
 {
-    // --- Configurable pools (you can fill these from defs/settings) ---
-    // Case-insensitive comparisons so "Baritone" == "baritone".
+    // --- ElevenLabs voice pools ---
     private HashSet<string> malePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     { "NYkjXRso4QIcgWakN1Cr", "XjLkpWUlnhS8i7gGz3lZ", "zNsotODqUhvbJ5wMG7Ei", "MFZUKuGQUsGJPQjTS4wC", "4dZr8J4CBeokyRkTRpoN" };
 
     private HashSet<string> femalePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {  "4tRn1lSkEn13EVTuqb0g", "eUdJpUEN3EslrgE24PKx", "kNie5n4lYl7TrvqBZ4iG", "g6xIsTj2HwM6VR4iXFCw", "jqcCZkN6Knx8BJ5TBdYR"  };
-    
+
+    // --- OpenAI voice pools ---
+    private HashSet<string> openAIMalePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    { "echo", "fable", "onyx", "ash", "ballad", "cedar" };
+
+    private HashSet<string> openAIFemalePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    { "alloy", "nova", "shimmer", "coral",  "marin", "sage" };
+
 
     // --- Main storage: pawn -> voice ---
     private Dictionary<Pawn, string> pawnVoices = new Dictionary<Pawn, string>();
@@ -253,10 +269,20 @@ public class VoiceWorldComp : WorldComponent
 
     private IEnumerable<string> PoolFor(Pawn p)
     {
-        if (p?.gender == Gender.Male) return malePool;
-        if (p?.gender == Gender.Female) return femalePool;
-        // Gender.None or unknown → use union (distinct)
-        return malePool.Concat(femalePool).Distinct(StringComparer.OrdinalIgnoreCase);
+        var useOpenAI = Settings.TTSProviderSetting.Value == TTSProvider.OpenAI;
+
+        if (useOpenAI)
+        {
+            if (p?.gender == Gender.Male) return openAIMalePool;
+            if (p?.gender == Gender.Female) return openAIFemalePool;
+            return openAIMalePool.Concat(openAIFemalePool).Distinct(StringComparer.OrdinalIgnoreCase);
+        }
+        else
+        {
+            if (p?.gender == Gender.Male) return malePool;
+            if (p?.gender == Gender.Female) return femalePool;
+            return malePool.Concat(femalePool).Distinct(StringComparer.OrdinalIgnoreCase);
+        }
     }
 
     // ---------- Read API ----------

@@ -83,6 +83,57 @@ public class Chat(Pawn pawn, LogEntry entry)
         return true;
     }
 
+    public async Task<bool> VocalizeOpenAI(string whatWasSaid, string voice)
+    {
+        using var client = new HttpClient();
+        var apiKey = Settings.TextAPIKey.Value;
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+        var requestBody = new
+        {
+            model = "gpt-4o-mini-tts",
+            input = whatWasSaid,
+            voice = voice,
+            response_format = "pcm"
+        };
+
+        var json = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        Log.Message($"{whatWasSaid} for the {entry} for the pawn {pawn} using the voice {voice}");
+
+        var response = await client.PostAsync(
+            "https://api.openai.com/v1/audio/speech",
+            content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Log.Message("Failed to vocalize text with OpenAI.");
+            Log.Message($"Status Code: {response.StatusCode}");
+            var errorBody = await response.Content.ReadAsStringAsync();
+            Log.Message($"Error Body: {errorBody}");
+            return false;
+        }
+
+        var audioBytes = await response.Content.ReadAsByteArrayAsync();
+
+        // Convert PCM bytes to AudioClip
+        var audioClip = WavUtility.ToAudioClip(audioBytes, "VocalizedText");
+        var audioSource = new GameObject("VocalizedAudioSource").AddComponent<AudioSource>();
+        audioSource.clip = audioClip;
+        audioSource.volume = 1f;
+        AudioSource = audioSource;
+        MusicVol = Prefs.VolumeMusic;
+        Prefs.VolumeMusic = 0.05f;
+        Prefs.Apply();
+        Prefs.Save();
+        AudioSource.Play();
+        entry = null;
+        MusicReset = false;
+
+        Log.Message($"Received {audioBytes.Length} bytes of audio data.");
+        return true;
+    }
+
     public async Task<string> Talk(string chatgpt_api_key, Pawn? talked_to, List<IArchivable> history)
     {
         var text = RemoveColorTag.Replace(Entry.ToGameStringFromPOV(pawn), string.Empty);

@@ -8,6 +8,12 @@ using Verse;
 
 namespace RimChat;
 
+public enum TTSProvider
+{
+    ElevenLabs,
+    OpenAI
+}
+
 public class Settings : ModSettings
 {
     public const int AutoHideSpeedDisabled = 1;
@@ -23,6 +29,7 @@ public class Settings : ModSettings
 
     public static readonly Setting<string> TextAPIKey = new(nameof(TextAPIKey), "");
     public static readonly Setting<string> VoiceAPIKey = new(nameof(VoiceAPIKey), "");
+    public static readonly Setting<TTSProvider> TTSProviderSetting = new(nameof(TTSProviderSetting), TTSProvider.ElevenLabs);
 
 
     private static IEnumerable<Setting> AllSettings => typeof(Settings).GetFields().Select(static field => field.GetValue(null) as Setting).Where(static setting => setting is not null)!;
