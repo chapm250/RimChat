@@ -76,10 +76,8 @@ public class Chat(Pawn pawn, LogEntry entry)
         Prefs.Apply();
         Prefs.Save();
         AudioSource.Play();
+        entry = null;
         MusicReset = false;
-        // Prefs.VolumeMusic = vol;
-        // Prefs.Apply();
-        // Prefs.Save();
 
         Log.Message($"Received {audioBytes.Length} bytes of audio data.");
         return true;
@@ -122,6 +120,8 @@ public class Chat(Pawn pawn, LogEntry entry)
         var input = "";
 
         var job = pawn.CurJob.def;
+        Log.Message("related pawns");
+        Log.Message(pawn.relations.RelatedPawns);
 
 
         if (talked_to != null)
@@ -132,6 +132,7 @@ Do not reference objects as if they are nearby, just talk about them in the abst
 Do not speak for the other pawn {talked_to.Name}, only for yourself.
 Here is some history, you crashed {RimWorld.GenDate.DaysPassedSinceSettle} days ago.
 You are currently doing {job}
+Your background is {pawn.story.Adulthood.baseDesc}
 The following are some recent events
 {all_history}
 ";
