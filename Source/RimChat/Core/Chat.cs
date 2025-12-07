@@ -191,7 +191,7 @@ The following are some recent events
         }
         var requestBody = new
         {
-            model = "gpt-5",
+            model = "gpt-5.1-2025-11-13",
             input,
             instructions,
         };
