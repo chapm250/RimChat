@@ -441,14 +441,14 @@ public static class ChanceUtil
          };
          int[] percents =  new int[]
          {
+             10,
+             10,
+             50,
              100,
-             10,
-             50,
-             75,
              50,
              50,
-             10,
-             10,
+             20,
+             20,
              10,
              100,
              90,
