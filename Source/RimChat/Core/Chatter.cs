@@ -78,7 +78,7 @@ public static class Chatter
             // Start the talk
             chat.AIChat = chat.Talk(Settings.TextAPIKey.Value, talked_to, Find.History.archive.ArchivablesListForReading);
             is_up = pawn;
-            next_talk = DateTime.Now.AddMinutes(1);
+            next_talk = DateTime.Now.AddMinutes(Settings.MinTimeBetweenTalkInMinutes.Value);
 
             chat.AlreadyPlayed = true;
             Log.Message($"Next talk: {next_talk}");

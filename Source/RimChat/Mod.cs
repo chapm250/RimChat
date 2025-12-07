@@ -55,6 +55,11 @@ public sealed class Mod : Verse.Mod
             Find.WindowStack.Add(new FloatMenu(options));
         }
 
+        listing.Gap();
+
+        listing.Label($"Min Time Between Talk (minutes): {Settings.MinTimeBetweenTalkInMinutes.Value:F1}");
+        Settings.MinTimeBetweenTalkInMinutes.Value = listing.Slider(Settings.MinTimeBetweenTalkInMinutes.Value, 0.1f, 10f);
+
         listing.End();
         base.DoSettingsWindowContents(inRect);
     }

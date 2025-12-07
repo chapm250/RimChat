@@ -30,6 +30,7 @@ public class Settings : ModSettings
     public static readonly Setting<string> TextAPIKey = new(nameof(TextAPIKey), "");
     public static readonly Setting<string> VoiceAPIKey = new(nameof(VoiceAPIKey), "");
     public static readonly Setting<TTSProvider> TTSProviderSetting = new(nameof(TTSProviderSetting), TTSProvider.ElevenLabs);
+    public static readonly Setting<float> MinTimeBetweenTalkInMinutes = new(nameof(MinTimeBetweenTalkInMinutes), 1f);
 
 
     private static IEnumerable<Setting> AllSettings => typeof(Settings).GetFields().Select(static field => field.GetValue(null) as Setting).Where(static setting => setting is not null)!;
