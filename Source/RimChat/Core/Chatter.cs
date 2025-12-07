@@ -28,6 +28,11 @@ public static class Chatter
     private static bool CanRender() => WorldRendererUtility.CurrentWorldRenderMode is WorldRenderMode.None or WorldRenderMode.Background;
     private static Dictionary<Pawn, Chat> Dictionary = new();
 
+    public static Chat? GetChat(Pawn pawn)
+    {
+        return Dictionary.TryGetValue(pawn, out var chat) ? chat : null;
+    }
+
     // private static Dictionary<Pawn, string> VoiceDict = new();
     private static System.DateTime next_talk = DateTime.Now;
 

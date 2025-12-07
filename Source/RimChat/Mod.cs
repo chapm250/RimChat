@@ -31,12 +31,12 @@ public sealed class Mod : Verse.Mod
         var listing = new Listing_Standard();
         listing.Begin(inRect);
 
-        listing.Label("Text API Key:");
+        listing.Label("OpenAI API Key:");
         Settings.TextAPIKey.Value = listing.TextEntry(Settings.TextAPIKey.Value);
 
         listing.Gap();
 
-        listing.Label("Voice API Key:");
+        listing.Label("Eleven Labs API Key:");
         Settings.VoiceAPIKey.Value = listing.TextEntry(Settings.VoiceAPIKey.Value);
 
         listing.End();
