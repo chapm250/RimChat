@@ -61,7 +61,7 @@ public static class Chatter
 
         if (is_up != null)
         {
-            pawn = is_up;
+            pawn = randomEntry.Key;
             chat = Dictionary[is_up];
         }
         if (!CanRender() || !pawn.Spawned || pawn.Map != Find.CurrentMap || pawn.Map!.fogGrid!.IsFogged(pawn.Position)) { return; }
@@ -142,7 +142,7 @@ public static class Chatter
 
         if (initiator is null || initiator.Map != Find.CurrentMap) { return; }
 
-        if (talked_to == null ) return;
+        if (talked_to == null || recipient == initiator ) return;
 
         var choosenTalk = ChanceUtil.IsSelected(kind_of_talk.defName);
         Log.Message($"kind of talk {kind_of_talk.defName} choosen: {choosenTalk }");
