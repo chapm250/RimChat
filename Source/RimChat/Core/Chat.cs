@@ -116,8 +116,8 @@ public class Chat(Pawn pawn, LogEntry entry)
 
         var audioBytes = await response.Content.ReadAsByteArrayAsync();
 
-        // Convert PCM bytes to AudioClip
-        var audioClip = WavUtility.ToAudioClip(audioBytes, "VocalizedText");
+        // Convert PCM bytes to AudioClip - OpenAI returns 24kHz PCM
+        var audioClip = WavUtility.ToAudioClipWithSampleRate(audioBytes, "VocalizedText", 24000);
         var audioSource = new GameObject("VocalizedAudioSource").AddComponent<AudioSource>();
         audioSource.clip = audioClip;
         audioSource.volume = 1f;
@@ -274,6 +274,24 @@ public static class WavUtility
         for (int i = 0; i < sampleCount; i++)
         {
             short sample = (short)(wavFile[headerOffset + i * 2] | (wavFile[headerOffset + i * 2 + 1] << 8));
+            samples[i] = sample / 32768f;
+        }
+
+        AudioClip audioClip = AudioClip.Create(clipName, sampleCount, channels, sampleRate, false);
+        audioClip.SetData(samples, 0);
+        return audioClip;
+    }
+
+    public static AudioClip ToAudioClipWithSampleRate(byte[] pcmData, string clipName, int sampleRate)
+    {
+        // Parse raw PCM data (16-bit PCM, mono, no header)
+        int channels = 1;
+        int sampleCount = pcmData.Length / 2;
+        float[] samples = new float[sampleCount];
+
+        for (int i = 0; i < sampleCount; i++)
+        {
+            short sample = (short)(pcmData[i * 2] | (pcmData[i * 2 + 1] << 8));
             samples[i] = sample / 32768f;
         }
 
