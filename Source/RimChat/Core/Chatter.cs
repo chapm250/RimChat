@@ -286,8 +286,41 @@ public class VoiceWorldComp : WorldComponent
     }
 
     // ---------- Read API ----------
-    public string GetVoice(Pawn p) =>
-        p != null && pawnVoices.TryGetValue(p, out var v) ? v : null;
+    public string GetVoice(Pawn p)
+    {
+        if (p == null) return null;
+
+        if (pawnVoices.TryGetValue(p, out var voice))
+        {
+            // Check if the voice is valid for the current provider
+            if (!IsVoiceValidForCurrentProvider(voice))
+            {
+                // Voice is from a different provider, reassign
+                Log.Message($"Voice {voice} for pawn {p.Name} is invalid for current TTS provider, reassigning...");
+                TryAssignRandomVoice(p);
+                pawnVoices.TryGetValue(p, out voice);
+            }
+            return voice;
+        }
+
+        return null;
+    }
+
+    private bool IsVoiceValidForCurrentProvider(string voice)
+    {
+        if (string.IsNullOrWhiteSpace(voice)) return false;
+
+        var useOpenAI = Settings.TTSProviderSetting.Value == TTSProvider.OpenAI;
+
+        if (useOpenAI)
+        {
+            return openAIMalePool.Contains(voice) || openAIFemalePool.Contains(voice);
+        }
+        else
+        {
+            return malePool.Contains(voice) || femalePool.Contains(voice);
+        }
+    }
 
     public bool IsVoiceFree(string voice) => !voiceIndex.ContainsKey(voice);
 
