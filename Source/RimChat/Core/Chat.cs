@@ -181,13 +181,29 @@ public class Chat(Pawn pawn, LogEntry entry)
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
         var instructions = "";
         var input = "";
-
-        var job = pawn.CurJob.def;
-        Log.Message("related pawns");
-        Log.Message(pawn.relations.RelatedPawns);
-
+        
+        // Get subjects
         var subjects = new string[] { "recent events", "your adulthood", "your childhood", "what you're currently doing" };
         var subject = subjects[new System.Random().Next(subjects.Length)];
+
+        // Get current thoughts separately
+        var thoughts = new List<string>();
+        if (pawn.needs?.mood?.thoughts != null)
+        {
+            List<Thought> allThoughts = new List<Thought>();
+            pawn.needs.mood.thoughts.GetAllMoodThoughts(allThoughts);
+
+
+            thoughts = allThoughts
+                .Select(thought => thought.Description)
+                .Where(desc => !string.IsNullOrEmpty(desc))
+                .Distinct()
+                .Take(5)
+                .ToList();
+
+        }
+
+        var thought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
 
 
         if (talked_to != null)
@@ -197,7 +213,15 @@ public class Chat(Pawn pawn, LogEntry entry)
             switch (KindOfTalk)
             {
                 case "Chitchat":
-                    input = $"you make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
+                    // TEMPORARILY HARDCODED TO TEST THOUGHT PROMPT
+                    if (thought != null) // && new System.Random().Next(2) == 0)
+                    {
+                        input = $"{thought}. This has been affecting you, and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                    }
+                    else
+                    {
+                        input = $"you make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
+                    }
                     break;
                 case "DeepTalk":
                     input = $"you talk about a deep subject with you're fellow crewmate {talked_to.Name}";
