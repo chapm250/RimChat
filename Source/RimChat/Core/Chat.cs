@@ -163,6 +163,18 @@ public class Chat(Pawn pawn, LogEntry entry)
         return response;
     }
 
+    private string SubstituteKeywords(string template, Pawn pawn, Pawn talked_to, string all_history)
+    {
+        return template
+            .Replace("{PAWN_NAME}", pawn.Name?.ToString() ?? "Unknown")
+            .Replace("{RECIPIENT_NAME}", talked_to.Name?.ToString() ?? "Unknown")
+            .Replace("{DAYS_PASSED}", RimWorld.GenDate.DaysPassedSinceSettle.ToString())
+            .Replace("{JOB}", pawn.CurJob?.def?.ToString() ?? "nothing")
+            .Replace("{CHILDHOOD}", pawn.story.Childhood?.untranslatedDesc ?? "colonist")
+            .Replace("{ADULTHOOD}", pawn.story.Adulthood?.untranslatedDesc ?? "colonist")
+            .Replace("{HISTORY}", all_history);
+    }
+
     public async Task<string?> GetOpenAIResponseAsync(string apiKey, Pawn? talked_to, string all_history)
     {
         using var client = new HttpClient();
@@ -177,18 +189,7 @@ public class Chat(Pawn pawn, LogEntry entry)
 
         if (talked_to != null)
         {
-            instructions = @$"You are a pawn in Rimworld named {pawn.Name} talking to {talked_to.Name} in english.
-Respond to {talked_to.Name} in 1 - 3 sentences.
-You may talk about the recent events, but you can also discuss random things from your past or thoughts as a person might in this situation.
-Do not reference objects as if they are nearby, just talk about them in the abstract or as memories.
-Do not speak for the other pawn {talked_to.Name}, only for yourself.
-Here is some history, you crashed {RimWorld.GenDate.DaysPassedSinceSettle} days ago.
-You are currently doing {job}
-Your childhood background is {pawn.story.Childhood?.untranslatedDesc ?? "colonist"}
-Your adulthood background is {pawn.story.Adulthood?.untranslatedDesc ?? "colonist"}
-The following are some recent events
-{all_history}
-";
+            instructions = SubstituteKeywords(Settings.InstructionsTemplate.Value, pawn, talked_to, all_history);
 
             switch (KindOfTalk)
             {

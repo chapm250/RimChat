@@ -32,7 +32,7 @@ public sealed class Mod : Verse.Mod
     public override void DoSettingsWindowContents(Rect inRect)
     {
         var viewRect = new Rect(0f, 0f, inRect.width - 16f, inRect.height);
-        var scrollRect = new Rect(0f, 0f, inRect.width - 16f, 1200f); // Adjust height as needed
+        var scrollRect = new Rect(0f, 0f, inRect.width - 16f, 1500f); // Adjust height as needed
 
         Widgets.BeginScrollView(viewRect, ref scrollPosition, scrollRect);
         var listing = new Listing_Standard();
@@ -116,6 +116,14 @@ public sealed class Mod : Verse.Mod
 
         listing.Label($"Breakup: {Settings.BreakupTalkChance.Value}%");
         Settings.BreakupTalkChance.Value = (int)listing.Slider(Settings.BreakupTalkChance.Value, 0, 100);
+
+        listing.Gap();
+        listing.Gap();
+        listing.Label("AI Instructions Template:");
+        listing.Label("Available keywords: {PAWN_NAME}, {RECIPIENT_NAME}, {DAYS_PASSED}, {JOB}, {CHILDHOOD}, {ADULTHOOD}, {HISTORY}");
+
+        var textAreaRect = listing.GetRect(200f);
+        Settings.InstructionsTemplate.Value = Widgets.TextArea(textAreaRect, Settings.InstructionsTemplate.Value);
 
         listing.End();
         Widgets.EndScrollView();
