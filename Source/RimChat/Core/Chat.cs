@@ -186,6 +186,9 @@ public class Chat(Pawn pawn, LogEntry entry)
         Log.Message("related pawns");
         Log.Message(pawn.relations.RelatedPawns);
 
+        var subjects = new string[] { "recent events", "your adulthood", "your childhood", "what you're currently doing" };
+        var subject = subjects[new System.Random().Next(subjects.Length)];
+
 
         if (talked_to != null)
         {
@@ -194,7 +197,7 @@ public class Chat(Pawn pawn, LogEntry entry)
             switch (KindOfTalk)
             {
                 case "Chitchat":
-                    input = $"you make some casual conversation with you're fellow crewmate {talked_to.Name}";
+                    input = $"you make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
                     break;
                 case "DeepTalk":
                     input = $"you talk about a deep subject with you're fellow crewmate {talked_to.Name}";
@@ -236,7 +239,7 @@ public class Chat(Pawn pawn, LogEntry entry)
                     input = $"you say something to try to romance {talked_to.Name}";
                     break;
                 case "MarriageProposal":
-                    input = $"you say something to try to get {talked_to.Name} to marry you";
+                    input = $"you propose to {talked_to.Name}";
                     break;
                 case "Breakup":
                     input = $"you are breaking up with {talked_to.Name}";
