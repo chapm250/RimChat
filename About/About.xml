@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-  <packageId>DukeNukem69.RimChat</packageId>
+  <packageId>DoctorAlien.RimChat</packageId>
   <name>RimChat</name>
-  <author>DukeNukem69</author>
-  <description>Expands social interactions in the log and adds a voice</description>
+  <author>Dr. Alien</author>
+  <description>LLM expanded and voiced social interactions</description>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
