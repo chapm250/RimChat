@@ -251,6 +251,7 @@ public class Chat(Pawn pawn, LogEntry entry)
             model = "gpt-5.1-2025-11-13",
             input,
             instructions,
+            temperature = 1.5
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
