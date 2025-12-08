@@ -416,61 +416,31 @@ public class VoiceWorldComp : WorldComponent
 
 public static class ChanceUtil
 {
-    // values: ["a","b","c"], percents: [10,20,30]
     public static bool IsSelected(string value)
     {
-         // possible_talks = { "Chitchat", "DeepTalk"};
-         string[] values = new string[]
-         {
-             "Chitchat",
-             "DeepTalk",
-             "Slight",
-             "Insult",
-             "KindWords",
-             "AnimalChat",
-             "TameAttempt",
-             "TrainAttempt",
-             "Nuzzle",
-             "ReleaseToWild",
-             "BuildRapport",
-             "RecruitAttempt",
-             "SparkJailbreak",
-             "RomanceAttempt",
-             "MarriageProposal",
-             "Breakup"
-         };
-         int[] percents =  new int[]
-         {
-             10,
-             10,
-             50,
-             100,
-             50,
-             50,
-             20,
-             20,
-             10,
-             100,
-             90,
-             90,
-             100,
-             100,
-             100,
-             100
-         };
-            
-        if (values == null || percents == null) return false;
-        int n = Math.Min(values.Length, percents.Length);
-
-        for (int i = 0; i < n; i++)
+        int percent = value switch
         {
-            if (string.Equals(values[i], value, StringComparison.OrdinalIgnoreCase))
-            {
-                float p = Clamp01(percents[i] / 100f);
-                return Rand.Value < p; // or Rand.Chance(p)
-            }
-        }
-        return false; // value not found → treat as 0%
+            "Chitchat" => Settings.ChitchatTalkChance.Value,
+            "DeepTalk" => Settings.DeepTalkTalkChance.Value,
+            "Slight" => Settings.SlightTalkChance.Value,
+            "Insult" => Settings.InsultTalkChance.Value,
+            "KindWords" => Settings.KindWordsTalkChance.Value,
+            "AnimalChat" => Settings.AnimalChatTalkChance.Value,
+            "TameAttempt" => Settings.TameAttemptTalkChance.Value,
+            "TrainAttempt" => Settings.TrainAttemptTalkChance.Value,
+            "Nuzzle" => Settings.NuzzleTalkChance.Value,
+            "ReleaseToWild" => Settings.ReleaseToWildTalkChance.Value,
+            "BuildRapport" => Settings.BuildRapportTalkChance.Value,
+            "RecruitAttempt" => Settings.RecruitAttemptTalkChance.Value,
+            "SparkJailbreak" => Settings.SparkJailbreakTalkChance.Value,
+            "RomanceAttempt" => Settings.RomanceAttemptTalkChance.Value,
+            "MarriageProposal" => Settings.MarriageProposalTalkChance.Value,
+            "Breakup" => Settings.BreakupTalkChance.Value,
+            _ => 0 // Unknown interaction type → 0% chance
+        };
+
+        float p = Clamp01(percent / 100f);
+        return Rand.Value < p;
     }
 
     private static float Clamp01(float x) => x < 0f ? 0f : (x > 1f ? 1f : x);
