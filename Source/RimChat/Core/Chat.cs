@@ -213,8 +213,7 @@ public class Chat(Pawn pawn, LogEntry entry)
             switch (KindOfTalk)
             {
                 case "Chitchat":
-                    // TEMPORARILY HARDCODED TO TEST THOUGHT PROMPT
-                    if (thought != null) // && new System.Random().Next(2) == 0)
+                    if (thought != null) 
                     {
                         input = $"{thought}. This has been affecting you, and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
                     }
