@@ -66,7 +66,7 @@ public static class Chatter
         }
         if (!CanRender() || !pawn.Spawned || pawn.Map != Find.CurrentMap || pawn.Map!.fogGrid!.IsFogged(pawn.Position)) { return; }
 
-        if (chat.AIChat == null && DateTime.Now > next_talk && talked_to != null)
+        if (chat.AIChat == null && DateTime.Now > next_talk && talked_to != null && talked_to != pawn)
         {
             // If the chat has not been talked about yet, start the talk
             if (chat.Entry is PlayLogEntry_Interaction interaction)
