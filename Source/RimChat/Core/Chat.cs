@@ -48,7 +48,6 @@ public class Chat(Pawn pawn, LogEntry entry)
 
         var json = JsonSerializer.Serialize(requestBody);
         var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-        Log.Message($"{whatWasSaid} for the {entry} for the pawn {pawn} using the voiceid {voiceID}");
         // Request WAV output for easier Unity playback
         var response = await client.PostAsync(
             $"https://api.elevenlabs.io/v1/text-to-speech/{voiceID}?output_format=pcm_16000",
@@ -79,7 +78,6 @@ public class Chat(Pawn pawn, LogEntry entry)
         entry = null;
         MusicReset = false;
 
-        Log.Message($"Received {audioBytes.Length} bytes of audio data.");
         return true;
     }
 
@@ -99,7 +97,6 @@ public class Chat(Pawn pawn, LogEntry entry)
 
         var json = JsonSerializer.Serialize(requestBody);
         var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-        Log.Message($"{whatWasSaid} for the {entry} for the pawn {pawn} using the voice {voice}");
 
         var response = await client.PostAsync(
             "https://api.openai.com/v1/audio/speech",
@@ -130,7 +127,6 @@ public class Chat(Pawn pawn, LogEntry entry)
         entry = null;
         MusicReset = false;
 
-        Log.Message($"Received {audioBytes.Length} bytes of audio data.");
         return true;
     }
 

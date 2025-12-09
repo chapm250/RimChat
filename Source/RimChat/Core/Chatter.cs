@@ -81,7 +81,6 @@ public static class Chatter
             next_talk = DateTime.Now.AddMinutes(Settings.MinTimeBetweenTalkInMinutes.Value);
 
             chat.AlreadyPlayed = true;
-            Log.Message($"Next talk: {next_talk}");
         }
         else if (chat.AIChat is not null && !chat.AIChat.IsCompleted)
         {
@@ -91,15 +90,12 @@ public static class Chatter
         else if (chat.AIChat is not null && chat.AIChat.IsCompleted)
         {
             var result = chat.AIChat.Result;
-            Log.Message($"Returned text: {result}");
             chat.AIChat = null;
             talked_to = null;
                 
             var db = VoiceWorldComp.Get();
-            Log.Message($"chat: {chat.Entry}  pawn: {chat.pawn.Name} is_up: {is_up}");
             chat.AlreadyPlayed = false;
             var voice = db.GetVoice(chat.pawn);
-            Log.Message($"chat: {result} voice dict {voice}");
 
             if (Settings.TTSProviderSetting.Value == TTSProvider.OpenAI)
             {
@@ -155,7 +151,6 @@ public static class Chatter
         if (talked_to == null || recipient == initiator ) return;
 
         var choosenTalk = ChanceUtil.IsSelected(kind_of_talk.defName);
-        Log.Message($"kind of talk {kind_of_talk.defName} choosen: {choosenTalk }");
 
         if (choosenTalk)
         {
@@ -172,13 +167,11 @@ public static class Chatter
 
             var db = VoiceWorldComp.Get();
 
-            Log.Message($"get voice value {db.GetVoice((initiator))}");
 
             if (db.GetVoice(initiator) == "" || db.GetVoice(initiator) == null)
             {
                 db.TryAssignRandomVoice(initiator);
             }
-            Log.Message($"get voice value after {db.GetVoice((initiator))}");
         }
 
 
@@ -228,13 +221,10 @@ public class VoiceWorldComp : WorldComponent
         // Save the assignments
         Scribe_Collections.Look(ref pawnVoices, "pawnVoices",
             LookMode.Reference, LookMode.Value, ref _keys, ref _vals);
-        Log.Message("pawnVoices");
-        Log.Message(pawnVoices);
 
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
         {
 
-            Log.Message("Pruning voices?");
             RebuildIndexAndPrune();
         }
     }
