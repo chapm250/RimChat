@@ -38,8 +38,27 @@ public sealed class Mod : Verse.Mod
         var listing = new Listing_Standard();
         listing.Begin(scrollRect);
 
+        if (listing.ButtonText($"LLM Provider: {Settings.LLMProviderSetting.Value}"))
+        {
+            var options = new List<FloatMenuOption>();
+            foreach (LLMProvider provider in System.Enum.GetValues(typeof(LLMProvider)))
+            {
+                options.Add(new FloatMenuOption(provider.ToString(), () => {
+                    Settings.LLMProviderSetting.Value = provider;
+                }));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        listing.Gap();
+
         listing.Label("OpenAI API Key:");
         Settings.TextAPIKey.Value = listing.TextEntry(Settings.TextAPIKey.Value);
+
+        listing.Gap();
+
+        listing.Label("Claude API Key:");
+        Settings.ClaudeAPIKey.Value = listing.TextEntry(Settings.ClaudeAPIKey.Value);
 
         listing.Gap();
 

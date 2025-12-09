@@ -14,6 +14,12 @@ public enum TTSProvider
     OpenAI
 }
 
+public enum LLMProvider
+{
+    OpenAI,
+    Claude
+}
+
 public class Settings : ModSettings
 {
     public const int AutoHideSpeedDisabled = 1;
@@ -28,7 +34,9 @@ public class Settings : ModSettings
     public static bool Activated = true;
 
     public static readonly Setting<string> TextAPIKey = new(nameof(TextAPIKey), "");
+    public static readonly Setting<string> ClaudeAPIKey = new(nameof(ClaudeAPIKey), "");
     public static readonly Setting<string> VoiceAPIKey = new(nameof(VoiceAPIKey), "");
+    public static readonly Setting<LLMProvider> LLMProviderSetting = new(nameof(LLMProviderSetting), LLMProvider.OpenAI);
     public static readonly Setting<TTSProvider> TTSProviderSetting = new(nameof(TTSProviderSetting), TTSProvider.ElevenLabs);
     public static readonly Setting<float> MinTimeBetweenTalkInMinutes = new(nameof(MinTimeBetweenTalkInMinutes), 1f);
 

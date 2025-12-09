@@ -139,28 +139,40 @@ public class Chat(Pawn pawn, LogEntry entry)
         var text = RemoveColorTag.Replace(Entry.ToGameStringFromPOV(pawn), string.Empty);
         var all_history = string.Join("\n", history.Select(item => item.ArchivedLabel));
 
-        var response = await GetOpenAIResponseAsync(chatgpt_api_key, talked_to, all_history);
+        string response;
 
-        // Parse the response JSON and extract output->content->text
-        using var doc = JsonDocument.Parse(response);
-        var outputArray = doc.RootElement.GetProperty("output");
-        foreach (var outputItem in outputArray.EnumerateArray())
+        // Route to the correct LLM provider
+        if (Settings.LLMProviderSetting.Value == LLMProvider.Claude)
         {
-            if (outputItem.GetProperty("type").GetString() == "message" &&
-                outputItem.TryGetProperty("content", out var contentArray))
+            response = await GetClaudeResponseAsync(Settings.ClaudeAPIKey.Value, talked_to, all_history);
+            // Claude response is already parsed and returns the text directly
+            return response ?? "Error: No response from Claude";
+        }
+        else
+        {
+            response = await GetOpenAIResponseAsync(chatgpt_api_key, talked_to, all_history);
+
+            // Parse the OpenAI response JSON and extract output->content->text
+            using var doc = JsonDocument.Parse(response);
+            var outputArray = doc.RootElement.GetProperty("output");
+            foreach (var outputItem in outputArray.EnumerateArray())
             {
-                foreach (var contentItem in contentArray.EnumerateArray())
+                if (outputItem.GetProperty("type").GetString() == "message" &&
+                    outputItem.TryGetProperty("content", out var contentArray))
                 {
-                    if (contentItem.GetProperty("type").GetString() == "output_text" &&
-                        contentItem.TryGetProperty("text", out var textElement))
+                    foreach (var contentItem in contentArray.EnumerateArray())
                     {
-                        return textElement.GetString()!;
+                        if (contentItem.GetProperty("type").GetString() == "output_text" &&
+                            contentItem.TryGetProperty("text", out var textElement))
+                        {
+                            return textElement.GetString()!;
+                        }
                     }
                 }
             }
+            Log.Message("No output text found in response.");
+            return response;
         }
-        Log.Message("No output text found in response.");
-        return response;
     }
 
     private string SubstituteKeywords(string template, Pawn pawn, Pawn talked_to, string all_history)
@@ -285,6 +297,141 @@ public class Chat(Pawn pawn, LogEntry entry)
             return null;
 
         var responseBody = await response.Content.ReadAsStringAsync();
+        return responseBody;
+    }
+
+    public async Task<string?> GetClaudeResponseAsync(string apiKey, Pawn? talked_to, string all_history)
+    {
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+        client.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
+        var instructions = "";
+        var input = "";
+
+        // Get subjects
+        var subjects = new string[] { "recent events", "your adulthood", "your childhood", "what you're currently doing" };
+        var subject = subjects[new System.Random().Next(subjects.Length)];
+
+        // Get current thoughts separately
+        var thoughts = new List<string>();
+        if (pawn.needs?.mood?.thoughts != null)
+        {
+            List<Thought> allThoughts = new List<Thought>();
+            pawn.needs.mood.thoughts.GetAllMoodThoughts(allThoughts);
+
+            thoughts = allThoughts
+                .Select(thought => thought.Description)
+                .Where(desc => !string.IsNullOrEmpty(desc))
+                .Distinct()
+                .Take(5)
+                .ToList();
+        }
+
+        var thought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
+
+
+        if (talked_to != null)
+        {
+            instructions = SubstituteKeywords(Settings.InstructionsTemplate.Value, pawn, talked_to, all_history);
+
+            switch (KindOfTalk)
+            {
+                case "Chitchat":
+                    if (thought != null)
+                    {
+                        input = $"{thought}. This has been affecting you, and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                    }
+                    else
+                    {
+                        input = $"you make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
+                    }
+                    break;
+                case "DeepTalk":
+                    input = $"you talk about a deep subject with you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "Slight":
+                    input = $"you say something to slight you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "Insult":
+                    input = $"you say something to insult you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "KindWords":
+                    input = $"you say kind words to you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "AnimalChat":
+                    input = $"you say something to the animal {talked_to.Name}";
+                    break;
+                case "TameAttempt":
+                    input = $"you say something to the animal {talked_to.Name} to try and tame them";
+                    break;
+                case "TrainAttempt":
+                    input = $"you say something to the animal {talked_to.Name} to try and train them";
+                    break;
+                case "Nuzzle":
+                    input = $"you say something to the animal {talked_to.Name} who is nuzzling you";
+                    break;
+                case "ReleaseToWild":
+                    input = $"you say something to the animal {talked_to.Name} who you are releasing";
+                    break;
+                case "BuildRapport":
+                    input = $"you say something to the prisoner {talked_to.Name} to try and build rapport";
+                    break;
+                case "RecruitAttempt":
+                    input = $"you say something to the prisoner {talked_to.Name} to try and recruit them";
+                    break;
+                case "SparkJailbreak":
+                    input = $"you are a prisoner talking with you're fellow prisoner {talked_to.Name} to get them to rebel";
+                    break;
+                case "RomanceAttempt":
+                    input = $"you say something to try to romance {talked_to.Name}";
+                    break;
+                case "MarriageProposal":
+                    input = $"you propose to {talked_to.Name}";
+                    break;
+                case "Breakup":
+                    input = $"you are breaking up with {talked_to.Name}";
+                    break;
+            }
+        }
+
+        var requestBody = new
+        {
+            model = "claude-opus-4-5",
+            max_tokens = 1024,
+            system = instructions,
+            messages = new[]
+            {
+                new { role = "user", content = input }
+            }
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync("https://api.anthropic.com/v1/messages", content);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync();
+            Log.Message($"Claude API Error: {response.StatusCode} - {errorBody}");
+            return null;
+        }
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        // Parse the Claude response JSON
+        using var doc = JsonDocument.Parse(responseBody);
+        if (doc.RootElement.TryGetProperty("content", out var contentArray))
+        {
+            foreach (var contentItem in contentArray.EnumerateArray())
+            {
+                if (contentItem.TryGetProperty("text", out var textElement))
+                {
+                    return textElement.GetString();
+                }
+            }
+        }
+
+        Log.Message("No text found in Claude response.");
         return responseBody;
     }
 }
