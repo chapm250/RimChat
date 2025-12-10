@@ -142,7 +142,17 @@ public class Chat(Pawn pawn, LogEntry entry)
         {
             response = await GetClaudeResponseAsync(Settings.ClaudeAPIKey.Value, talked_to, all_history);
             // Claude response is already parsed and returns the text directly
-            return response ?? "Error: No response from Claude";
+            var claudeText = response ?? "Error: No response from Claude";
+            Log.Message($"[Claude] Captured text: {claudeText}");
+            return claudeText;
+        }
+        else if (Settings.LLMProviderSetting.Value == LLMProvider.Gemini)
+        {
+            response = await GetGeminiResponseAsync(Settings.GeminiAPIKey.Value, talked_to, all_history);
+            // Gemini response is already parsed and returns the text directly
+            var geminiText = response ?? "Error: No response from Gemini";
+            Log.Message($"[Gemini] Captured text: {geminiText}");
+            return geminiText;
         }
         else
         {
@@ -161,7 +171,9 @@ public class Chat(Pawn pawn, LogEntry entry)
                         if (contentItem.GetProperty("type").GetString() == "output_text" &&
                             contentItem.TryGetProperty("text", out var textElement))
                         {
-                            return textElement.GetString()!;
+                            var openaiText = textElement.GetString()!;
+                            Log.Message($"[OpenAI] Captured text: {openaiText}");
+                            return openaiText;
                         }
                     }
                 }
@@ -428,6 +440,164 @@ public class Chat(Pawn pawn, LogEntry entry)
         }
 
         Log.Message("No text found in Claude response.");
+        return responseBody;
+    }
+
+    public async Task<string?> GetGeminiResponseAsync(string apiKey, Pawn? talked_to, string all_history)
+    {
+        using var client = new HttpClient();
+        var instructions = "";
+        var input = "";
+
+        // Get subjects
+        var subjects = new string[] { "recent events", "your adulthood", "your childhood", "what you're currently doing" };
+        var subject = subjects[new System.Random().Next(subjects.Length)];
+
+        // Get current thoughts separately
+        var thoughts = new List<string>();
+        if (pawn.needs?.mood?.thoughts != null)
+        {
+            List<Thought> allThoughts = new List<Thought>();
+            pawn.needs.mood.thoughts.GetAllMoodThoughts(allThoughts);
+
+            thoughts = allThoughts
+                .Select(thought => thought.Description)
+                .Where(desc => !string.IsNullOrEmpty(desc))
+                .Distinct()
+                .Take(5)
+                .ToList();
+        }
+
+        var thought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
+
+
+        if (talked_to != null)
+        {
+            instructions = SubstituteKeywords(Settings.InstructionsTemplate.Value, pawn, talked_to, all_history);
+
+            switch (KindOfTalk)
+            {
+                case "Chitchat":
+                    if (thought != null)
+                    {
+                        input = $"{thought}. This has been affecting you, and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                    }
+                    else
+                    {
+                        input = $"you make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
+                    }
+                    break;
+                case "DeepTalk":
+                    input = $"you talk about a deep subject with you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "Slight":
+                    input = $"you say something to slight you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "Insult":
+                    input = $"you say something to insult you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "KindWords":
+                    input = $"you say kind words to you're fellow crewmate {talked_to.Name}";
+                    break;
+                case "AnimalChat":
+                    input = $"you say something to the animal {talked_to.Name}";
+                    break;
+                case "TameAttempt":
+                    input = $"you say something to the animal {talked_to.Name} to try and tame them";
+                    break;
+                case "TrainAttempt":
+                    input = $"you say something to the animal {talked_to.Name} to try and train them";
+                    break;
+                case "Nuzzle":
+                    input = $"you say something to the animal {talked_to.Name} who is nuzzling you";
+                    break;
+                case "ReleaseToWild":
+                    input = $"you say something to the animal {talked_to.Name} who you are releasing";
+                    break;
+                case "BuildRapport":
+                    input = $"you say something to the prisoner {talked_to.Name} to try and build rapport";
+                    break;
+                case "RecruitAttempt":
+                    input = $"you say something to the prisoner {talked_to.Name} to try and recruit them";
+                    break;
+                case "SparkJailbreak":
+                    input = $"you are a prisoner talking with you're fellow prisoner {talked_to.Name} to get them to rebel";
+                    break;
+                case "RomanceAttempt":
+                    input = $"you say something to try to romance {talked_to.Name}";
+                    break;
+                case "MarriageProposal":
+                    input = $"you propose to {talked_to.Name}";
+                    break;
+                case "Breakup":
+                    input = $"you are breaking up with {talked_to.Name}";
+                    break;
+            }
+        }
+
+        var combinedPrompt = $"{instructions}\n\n{input}";
+
+        var requestBody = new
+        {
+            contents = new[]
+            {
+                new
+                {
+                    parts = new[]
+                    {
+                        new { text = combinedPrompt }
+                    }
+                }
+            },
+            generationConfig = new
+            {
+                temperature = 1.5,
+                thinkingConfig = new
+                {
+                    includeThoughts = false,
+                    thinkingLevel = "LOW"
+                }
+            },
+            safetySettings = new[]
+            {
+                new { category = "HARM_CATEGORY_HARASSMENT", threshold = "BLOCK_NONE" },
+                new { category = "HARM_CATEGORY_HATE_SPEECH", threshold = "BLOCK_NONE" },
+                new { category = "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold = "BLOCK_NONE" },
+                new { category = "HARM_CATEGORY_DANGEROUS_CONTENT", threshold = "BLOCK_NONE" }
+            }
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync($"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key={apiKey}", content);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync();
+            Log.Message($"Gemini API Error: {response.StatusCode} - {errorBody}");
+            return null;
+        }
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        // Parse the Gemini response JSON - just grab the first text value
+        using var doc = JsonDocument.Parse(responseBody);
+        if (doc.RootElement.TryGetProperty("candidates", out var candidates) && candidates.GetArrayLength() > 0)
+        {
+            var firstCandidate = candidates[0];
+            if (firstCandidate.TryGetProperty("content", out var content_obj) &&
+                content_obj.TryGetProperty("parts", out var parts) &&
+                parts.GetArrayLength() > 0)
+            {
+                var firstPart = parts[0];
+                if (firstPart.TryGetProperty("text", out var textElement))
+                {
+                    return textElement.GetString();
+                }
+            }
+        }
+
+        Log.Message("No text found in Gemini response.");
         return responseBody;
     }
 }

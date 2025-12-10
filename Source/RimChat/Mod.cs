@@ -62,6 +62,11 @@ public sealed class Mod : Verse.Mod
 
         listing.Gap();
 
+        listing.Label("Gemini API Key:");
+        Settings.GeminiAPIKey.Value = listing.TextEntry(Settings.GeminiAPIKey.Value);
+
+        listing.Gap();
+
         listing.Label("Eleven Labs API Key:");
         Settings.VoiceAPIKey.Value = listing.TextEntry(Settings.VoiceAPIKey.Value);
 

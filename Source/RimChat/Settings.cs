@@ -17,7 +17,8 @@ public enum TTSProvider
 public enum LLMProvider
 {
     OpenAI,
-    Claude
+    Claude,
+    Gemini
 }
 
 public class Settings : ModSettings
@@ -35,6 +36,7 @@ public class Settings : ModSettings
 
     public static readonly Setting<string> TextAPIKey = new(nameof(TextAPIKey), "");
     public static readonly Setting<string> ClaudeAPIKey = new(nameof(ClaudeAPIKey), "");
+    public static readonly Setting<string> GeminiAPIKey = new(nameof(GeminiAPIKey), "");
     public static readonly Setting<string> VoiceAPIKey = new(nameof(VoiceAPIKey), "");
     public static readonly Setting<LLMProvider> LLMProviderSetting = new(nameof(LLMProviderSetting), LLMProvider.OpenAI);
     public static readonly Setting<TTSProvider> TTSProviderSetting = new(nameof(TTSProviderSetting), TTSProvider.ElevenLabs);
