@@ -72,6 +72,11 @@ public sealed class Mod : Verse.Mod
 
         listing.Gap();
 
+        listing.Label("Resemble API Key:");
+        Settings.ResembleAPIKey.Value = listing.TextEntry(Settings.ResembleAPIKey.Value);
+
+        listing.Gap();
+
         if (listing.ButtonText($"TTS Provider: {Settings.TTSProviderSetting.Value}"))
         {
             var options = new List<FloatMenuOption>();

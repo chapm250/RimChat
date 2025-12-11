@@ -130,6 +130,73 @@ public class Chat(Pawn pawn, LogEntry entry)
         return true;
     }
 
+    public async Task<bool> VocalizeResemble(string whatWasSaid, string voiceUuid)
+    {
+        using var client = new HttpClient();
+        var apiKey = Settings.ResembleAPIKey.Value;
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+
+        var requestBody = new
+        {
+            voice_uuid = voiceUuid,
+            data = whatWasSaid,
+            precision = "PCM_16"
+        };
+
+        var json = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync(
+            "https://f.cluster.resemble.ai/synthesize",
+            content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Log.Message("Failed to vocalize text with Resemble.");
+            Log.Message($"Status Code: {response.StatusCode}");
+            var errorBody = await response.Content.ReadAsStringAsync();
+            Log.Message($"Error Body: {errorBody}");
+            return false;
+        }
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        // Parse the response JSON and extract audio_content and sample_rate
+        using var doc = JsonDocument.Parse(responseBody);
+        if (!doc.RootElement.TryGetProperty("audio_content", out var audioContentElement))
+        {
+            Log.Message("Failed to find audio_content in Resemble response.");
+            return false;
+        }
+
+        if (!doc.RootElement.TryGetProperty("sample_rate", out var sampleRateElement))
+        {
+            Log.Message("Failed to find sample_rate in Resemble response.");
+            return false;
+        }
+
+        var audioBase64 = audioContentElement.GetString();
+        var audioBytes = System.Convert.FromBase64String(audioBase64);
+        var sampleRate = sampleRateElement.GetInt32();
+
+        // Convert PCM16 bytes to AudioClip using the sample rate from the response
+        var audioClip = WavUtility.ToAudioClipWithSampleRate(audioBytes, "VocalizedText", sampleRate);
+        var audioSource = new GameObject("VocalizedAudioSource").AddComponent<AudioSource>();
+        audioSource.clip = audioClip;
+        audioSource.volume = 1f;
+        AudioSource = audioSource;
+        MusicVol = Prefs.VolumeMusic;
+        Prefs.VolumeMusic = 0.05f;
+        Prefs.Apply();
+        Prefs.Save();
+        AudioSource.Play();
+        entry = null;
+        MusicReset = false;
+
+        Log.Message($"Received {audioBytes.Length} bytes of audio data from Resemble.");
+        return true;
+    }
+
     public async Task<string> Talk(string chatgpt_api_key, Pawn? talked_to, List<IArchivable> history)
     {
         var text = RemoveColorTag.Replace(Entry.ToGameStringFromPOV(pawn), string.Empty);

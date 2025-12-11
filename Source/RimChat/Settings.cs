@@ -11,7 +11,8 @@ namespace RimChat;
 public enum TTSProvider
 {
     ElevenLabs,
-    OpenAI
+    OpenAI,
+    Resemble
 }
 
 public enum LLMProvider
@@ -38,6 +39,7 @@ public class Settings : ModSettings
     public static readonly Setting<string> ClaudeAPIKey = new(nameof(ClaudeAPIKey), "");
     public static readonly Setting<string> GeminiAPIKey = new(nameof(GeminiAPIKey), "");
     public static readonly Setting<string> VoiceAPIKey = new(nameof(VoiceAPIKey), "");
+    public static readonly Setting<string> ResembleAPIKey = new(nameof(ResembleAPIKey), "");
     public static readonly Setting<LLMProvider> LLMProviderSetting = new(nameof(LLMProviderSetting), LLMProvider.OpenAI);
     public static readonly Setting<TTSProvider> TTSProviderSetting = new(nameof(TTSProviderSetting), TTSProvider.ElevenLabs);
     public static readonly Setting<float> MinTimeBetweenTalkInMinutes = new(nameof(MinTimeBetweenTalkInMinutes), 1f);

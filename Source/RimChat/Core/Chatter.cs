@@ -101,6 +101,10 @@ public static class Chatter
             {
                 await chat.VocalizeOpenAI(result, voice);
             }
+            else if (Settings.TTSProviderSetting.Value == TTSProvider.Resemble)
+            {
+                await chat.VocalizeResemble(result, voice);
+            }
             else
             {
                 await chat.Vocalize(result, voice);
@@ -202,6 +206,13 @@ public class VoiceWorldComp : WorldComponent
     private HashSet<string> openAIFemalePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     { "alloy", "nova", "shimmer", "coral",  "marin", "sage" };
 
+    // --- Resemble voice pools ---
+    private HashSet<string> resembleMalePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    { "38a0b764", "68e421ed", "bee581c1", "018dc07a", "a3b3f1df", "e8883d33", "ac7df359" };
+
+    private HashSet<string> resembleFemalePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    { "fb2d2858", "55f5b8dc", "96d225a3", "4e972f71", "8d516bf5", "1cf47426", "1ff0045f", "f453b918" };
+
 
     // --- Main storage: pawn -> voice ---
     private Dictionary<Pawn, string> pawnVoices = new Dictionary<Pawn, string>();
@@ -259,15 +270,21 @@ public class VoiceWorldComp : WorldComponent
 
     private IEnumerable<string> PoolFor(Pawn p)
     {
-        var useOpenAI = Settings.TTSProviderSetting.Value == TTSProvider.OpenAI;
+        var provider = Settings.TTSProviderSetting.Value;
 
-        if (useOpenAI)
+        if (provider == TTSProvider.OpenAI)
         {
             if (p?.gender == Gender.Male) return openAIMalePool;
             if (p?.gender == Gender.Female) return openAIFemalePool;
             return openAIMalePool.Concat(openAIFemalePool).Distinct(StringComparer.OrdinalIgnoreCase);
         }
-        else
+        else if (provider == TTSProvider.Resemble)
+        {
+            if (p?.gender == Gender.Male) return resembleMalePool;
+            if (p?.gender == Gender.Female) return resembleFemalePool;
+            return resembleMalePool.Concat(resembleFemalePool).Distinct(StringComparer.OrdinalIgnoreCase);
+        }
+        else // ElevenLabs
         {
             if (p?.gender == Gender.Male) return malePool;
             if (p?.gender == Gender.Female) return femalePool;
@@ -300,13 +317,17 @@ public class VoiceWorldComp : WorldComponent
     {
         if (string.IsNullOrWhiteSpace(voice)) return false;
 
-        var useOpenAI = Settings.TTSProviderSetting.Value == TTSProvider.OpenAI;
+        var provider = Settings.TTSProviderSetting.Value;
 
-        if (useOpenAI)
+        if (provider == TTSProvider.OpenAI)
         {
             return openAIMalePool.Contains(voice) || openAIFemalePool.Contains(voice);
         }
-        else
+        else if (provider == TTSProvider.Resemble)
+        {
+            return resembleMalePool.Contains(voice) || resembleFemalePool.Contains(voice);
+        }
+        else // ElevenLabs
         {
             return malePool.Contains(voice) || femalePool.Contains(voice);
         }
