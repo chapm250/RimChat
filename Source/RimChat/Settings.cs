@@ -67,8 +67,8 @@ public class Settings : ModSettings
     public static readonly Setting<string> InstructionsTemplate = new(nameof(InstructionsTemplate),
         @"You are a pawn in Rimworld named {PAWN_NAME} talking to {RECIPIENT_NAME} in english.
 Respond to {RECIPIENT_NAME} in 1 - 3 sentences.
-You may talk about the recent events, but you can also discuss random things from your past or thoughts as a person might in this situation.
 Do not reference objects as if they are nearby, just talk about them in the abstract or as memories.
+Do not use emote or action texts
 Do not speak for the other pawn {RECIPIENT_NAME}, only for yourself.
 Here is some history, you crashed {DAYS_PASSED} days ago.
 You are currently doing {JOB}

@@ -300,68 +300,67 @@ public class Chat(Pawn pawn, LogEntry entry)
             switch (KindOfTalk)
             {
                 case "Chitchat":
-                    if (thought != null) 
+                    if (thought != null)
                     {
-                        input = $"{thought}. This has been affecting you, and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        input = $"{thought}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
                     }
                     else
                     {
-                        input = $"you make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
+                        input = $"you ({pawn.Name}) make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
                     }
                     break;
                 case "DeepTalk":
-                    input = $"you talk about a deep subject with you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) talk about a deep subject with you're fellow crewmate {talked_to.Name}";
                     break;
                 case "Slight":
-                    input = $"you say something to slight you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to slight you're fellow crewmate {talked_to.Name}";
                     break;
                 case "Insult":
-                    input = $"you say something to insult you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to insult you're fellow crewmate {talked_to.Name}";
                     break;
                 case "KindWords":
-                    input = $"you say kind words to you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say kind words to you're fellow crewmate {talked_to.Name}";
                     break;
                 case "AnimalChat":
-                    input = $"you chat with the animal {talked_to.Name}";
+                    input = $"you ({pawn.Name}) chat with the animal {talked_to.Name}";
                     break;
                 case "TameAttempt":
-                    input = $"you say something to try and tame the animal {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to try and tame the animal {talked_to.Name}";
                     break;
                 case "TrainAttempt":
-                    input = $"you say something to try and train the animal {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to try and train the animal {talked_to.Name}";
                     break;
                 case "Nuzzle":
-                    input = $"you say something to the animal {talked_to.Name} who is nuzzling you";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name} who is nuzzling you";
                     break;
                 case "ReleaseToWild":
-                    input = $"you say something to the animal {talked_to.Name} who you are releasing";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name} who you are releasing";
                     break;
                 case "BuildRapport":
-                    input = $"you say something to the prisoner {talked_to.Name} to try and build rapport";
+                    input = $"you ({pawn.Name}) say something to the prisoner {talked_to.Name} to try and build rapport";
                     break;
                 case "RecruitAttempt":
-                    input = $"you say something to the prisoner {talked_to.Name} to try and recruit them";
+                    input = $"you ({pawn.Name}) say something to the prisoner {talked_to.Name} to try and recruit them";
                     break;
                 case "SparkJailbreak":
-                    input = $"you are a prisoner talking with you're fellow prisoner {talked_to.Name} to get them to rebel";
+                    input = $"you ({pawn.Name}) are a prisoner talking with you're fellow prisoner {talked_to.Name} to get them to rebel";
                     break;
                 case "RomanceAttempt":
-                    input = $"you say something to try to romance {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to try to romance {talked_to.Name}";
                     break;
                 case "MarriageProposal":
-                    input = $"you propose to {talked_to.Name}";
+                    input = $"you ({pawn.Name}) propose to {talked_to.Name}";
                     break;
                 case "Breakup":
-                    input = $"you are breaking up with {talked_to.Name}";
+                    input = $"you ({pawn.Name}) are breaking up with {talked_to.Name}";
                     break;
             }
         }
         var requestBody = new
         {
-            model = "gpt-5.1-2025-11-13",
+            model = "gpt-5.1-chat-latest",
             input,
             instructions,
-            temperature = 1.5
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
@@ -414,64 +413,64 @@ public class Chat(Pawn pawn, LogEntry entry)
                 case "Chitchat":
                     if (thought != null)
                     {
-                        input = $"{thought}. This has been affecting you, and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        input = $"{thought}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
                     }
                     else
                     {
-                        input = $"you make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
+                        input = $"you ({pawn.Name}) make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
                     }
                     break;
                 case "DeepTalk":
-                    input = $"you talk about a deep subject with you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) talk about a deep subject with you're fellow crewmate {talked_to.Name}";
                     break;
                 case "Slight":
-                    input = $"you say something to slight you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to slight you're fellow crewmate {talked_to.Name}";
                     break;
                 case "Insult":
-                    input = $"you say something to insult you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to insult you're fellow crewmate {talked_to.Name}";
                     break;
                 case "KindWords":
-                    input = $"you say kind words to you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say kind words to you're fellow crewmate {talked_to.Name}";
                     break;
                 case "AnimalChat":
-                    input = $"you say something to the animal {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name}";
                     break;
                 case "TameAttempt":
-                    input = $"you say something to the animal {talked_to.Name} to try and tame them";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name} to try and tame them";
                     break;
                 case "TrainAttempt":
-                    input = $"you say something to the animal {talked_to.Name} to try and train them";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name} to try and train them";
                     break;
                 case "Nuzzle":
-                    input = $"you say something to the animal {talked_to.Name} who is nuzzling you";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name} who is nuzzling you";
                     break;
                 case "ReleaseToWild":
-                    input = $"you say something to the animal {talked_to.Name} who you are releasing";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name} who you are releasing";
                     break;
                 case "BuildRapport":
-                    input = $"you say something to the prisoner {talked_to.Name} to try and build rapport";
+                    input = $"you ({pawn.Name}) say something to the prisoner {talked_to.Name} to try and build rapport";
                     break;
                 case "RecruitAttempt":
-                    input = $"you say something to the prisoner {talked_to.Name} to try and recruit them";
+                    input = $"you ({pawn.Name}) say something to the prisoner {talked_to.Name} to try and recruit them";
                     break;
                 case "SparkJailbreak":
-                    input = $"you are a prisoner talking with you're fellow prisoner {talked_to.Name} to get them to rebel";
+                    input = $"you ({pawn.Name}) are a prisoner talking with you're fellow prisoner {talked_to.Name} to get them to rebel";
                     break;
                 case "RomanceAttempt":
-                    input = $"you say something to try to romance {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to try to romance {talked_to.Name}";
                     break;
                 case "MarriageProposal":
-                    input = $"you propose to {talked_to.Name}";
+                    input = $"you ({pawn.Name}) propose to {talked_to.Name}";
                     break;
                 case "Breakup":
-                    input = $"you are breaking up with {talked_to.Name}";
+                    input = $"you ({pawn.Name}) are breaking up with {talked_to.Name}";
                     break;
             }
         }
 
         var requestBody = new
         {
-            model = "claude-opus-4-5",
+            model = "claude-haiku-4-5",
             max_tokens = 1024,
             system = instructions,
             messages = new[]
@@ -547,57 +546,57 @@ public class Chat(Pawn pawn, LogEntry entry)
                 case "Chitchat":
                     if (thought != null)
                     {
-                        input = $"{thought}. This has been affecting you, and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        input = $"{thought}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
                     }
                     else
                     {
-                        input = $"you make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
+                        input = $"you ({pawn.Name}) make some casual conversation about {subject} with you're fellow crewmate {talked_to.Name}";
                     }
                     break;
                 case "DeepTalk":
-                    input = $"you talk about a deep subject with you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) talk about a deep subject with you're fellow crewmate {talked_to.Name}";
                     break;
                 case "Slight":
-                    input = $"you say something to slight you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to slight you're fellow crewmate {talked_to.Name}";
                     break;
                 case "Insult":
-                    input = $"you say something to insult you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to insult you're fellow crewmate {talked_to.Name}";
                     break;
                 case "KindWords":
-                    input = $"you say kind words to you're fellow crewmate {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say kind words to you're fellow crewmate {talked_to.Name}";
                     break;
                 case "AnimalChat":
-                    input = $"you say something to the animal {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name}";
                     break;
                 case "TameAttempt":
-                    input = $"you say something to the animal {talked_to.Name} to try and tame them";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name} to try and tame them";
                     break;
                 case "TrainAttempt":
-                    input = $"you say something to the animal {talked_to.Name} to try and train them";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name} to try and train them";
                     break;
                 case "Nuzzle":
-                    input = $"you say something to the animal {talked_to.Name} who is nuzzling you";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name} who is nuzzling you";
                     break;
                 case "ReleaseToWild":
-                    input = $"you say something to the animal {talked_to.Name} who you are releasing";
+                    input = $"you ({pawn.Name}) say something to the animal {talked_to.Name} who you are releasing";
                     break;
                 case "BuildRapport":
-                    input = $"you say something to the prisoner {talked_to.Name} to try and build rapport";
+                    input = $"you ({pawn.Name}) say something to the prisoner {talked_to.Name} to try and build rapport";
                     break;
                 case "RecruitAttempt":
-                    input = $"you say something to the prisoner {talked_to.Name} to try and recruit them";
+                    input = $"you ({pawn.Name}) say something to the prisoner {talked_to.Name} to try and recruit them";
                     break;
                 case "SparkJailbreak":
-                    input = $"you are a prisoner talking with you're fellow prisoner {talked_to.Name} to get them to rebel";
+                    input = $"you ({pawn.Name}) are a prisoner talking with you're fellow prisoner {talked_to.Name} to get them to rebel";
                     break;
                 case "RomanceAttempt":
-                    input = $"you say something to try to romance {talked_to.Name}";
+                    input = $"you ({pawn.Name}) say something to try to romance {talked_to.Name}";
                     break;
                 case "MarriageProposal":
-                    input = $"you propose to {talked_to.Name}";
+                    input = $"you ({pawn.Name}) propose to {talked_to.Name}";
                     break;
                 case "Breakup":
-                    input = $"you are breaking up with {talked_to.Name}";
+                    input = $"you ({pawn.Name}) are breaking up with {talked_to.Name}";
                     break;
             }
         }
