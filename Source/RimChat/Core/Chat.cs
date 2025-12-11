@@ -308,8 +308,35 @@ public class Chat(Pawn pawn, LogEntry entry)
                         }
                         else
                         {
-                            // Prompt for negative thoughts (same for now, can customize later)
-                            input = $"{thoughtDesc}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                            // Check if this is a pain-related thought
+                            var thoughtDefName = selectedThought.def?.defName?.ToLower() ?? "";
+                            var thoughtLabel = selectedThought.def?.label?.ToLower() ?? "";
+                            var isPainRelated = thoughtDefName.Contains("pain") || thoughtLabel.Contains("pain");
+
+                            if (isPainRelated)
+                            {
+                                // Try to find what's causing the pain
+                                var painSource = "";
+                                if (pawn.health?.hediffSet?.hediffs != null)
+                                {
+                                    var painfulHediff = pawn.health.hediffSet.hediffs
+                                        .Where(h => h.PainOffset > 0)
+                                        .OrderByDescending(h => h.PainOffset)
+                                        .FirstOrDefault();
+
+                                    if (painfulHediff != null && painfulHediff.Part != null)
+                                    {
+                                        painSource = $" in your {painfulHediff.Part.Label}";
+                                    }
+                                }
+
+                                input = $"{thoughtDesc}. This pain{painSource} has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                            }
+                            else
+                            {
+                                // Prompt for negative thoughts (same for now, can customize later)
+                                input = $"{thoughtDesc}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                            }
                         }
                     }
                     else
@@ -429,8 +456,35 @@ public class Chat(Pawn pawn, LogEntry entry)
                         }
                         else
                         {
-                            // Prompt for negative thoughts (same for now, can customize later)
-                            input = $"{thoughtDesc}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                            // Check if this is a pain-related thought
+                            var thoughtDefName = selectedThought.def?.defName?.ToLower() ?? "";
+                            var thoughtLabel = selectedThought.def?.label?.ToLower() ?? "";
+                            var isPainRelated = thoughtDefName.Contains("pain") || thoughtLabel.Contains("pain");
+
+                            if (isPainRelated)
+                            {
+                                // Try to find what's causing the pain
+                                var painSource = "";
+                                if (pawn.health?.hediffSet?.hediffs != null)
+                                {
+                                    var painfulHediff = pawn.health.hediffSet.hediffs
+                                        .Where(h => h.PainOffset > 0)
+                                        .OrderByDescending(h => h.PainOffset)
+                                        .FirstOrDefault();
+
+                                    if (painfulHediff != null && painfulHediff.Part != null)
+                                    {
+                                        painSource = $" in your {painfulHediff.Part.Label}";
+                                    }
+                                }
+
+                                input = $"{thoughtDesc}. This pain{painSource} has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                            }
+                            else
+                            {
+                                // Prompt for negative thoughts (same for now, can customize later)
+                                input = $"{thoughtDesc}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                            }
                         }
                     }
                     else
@@ -572,8 +626,35 @@ public class Chat(Pawn pawn, LogEntry entry)
                         }
                         else
                         {
-                            // Prompt for negative thoughts (same for now, can customize later)
-                            input = $"{thoughtDesc}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                            // Check if this is a pain-related thought
+                            var thoughtDefName = selectedThought.def?.defName?.ToLower() ?? "";
+                            var thoughtLabel = selectedThought.def?.label?.ToLower() ?? "";
+                            var isPainRelated = thoughtDefName.Contains("pain") || thoughtLabel.Contains("pain");
+
+                            if (isPainRelated)
+                            {
+                                // Try to find what's causing the pain
+                                var painSource = "";
+                                if (pawn.health?.hediffSet?.hediffs != null)
+                                {
+                                    var painfulHediff = pawn.health.hediffSet.hediffs
+                                        .Where(h => h.PainOffset > 0)
+                                        .OrderByDescending(h => h.PainOffset)
+                                        .FirstOrDefault();
+
+                                    if (painfulHediff != null && painfulHediff.Part != null)
+                                    {
+                                        painSource = $" in your {painfulHediff.Part.Label}";
+                                    }
+                                }
+
+                                input = $"{thoughtDesc}. This pain{painSource} has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                            }
+                            else
+                            {
+                                // Prompt for negative thoughts (same for now, can customize later)
+                                input = $"{thoughtDesc}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                            }
                         }
                     }
                     else
