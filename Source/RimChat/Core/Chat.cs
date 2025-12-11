@@ -274,23 +274,19 @@ public class Chat(Pawn pawn, LogEntry entry)
         var subject = subjects[new System.Random().Next(subjects.Length)];
 
         // Get current thoughts separately
-        var thoughts = new List<string>();
+        var thoughts = new List<Thought>();
         if (pawn.needs?.mood?.thoughts != null)
         {
             List<Thought> allThoughts = new List<Thought>();
             pawn.needs.mood.thoughts.GetAllMoodThoughts(allThoughts);
 
-
             thoughts = allThoughts
-                .Select(thought => thought.Description)
-                .Where(desc => !string.IsNullOrEmpty(desc))
-                .Distinct()
+                .Where(t => !string.IsNullOrEmpty(t.Description))
                 .Take(5)
                 .ToList();
-
         }
 
-        var thought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
+        Thought? selectedThought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
 
 
         if (talked_to != null)
@@ -300,9 +296,21 @@ public class Chat(Pawn pawn, LogEntry entry)
             switch (KindOfTalk)
             {
                 case "Chitchat":
-                    if (thought != null)
+                    if (selectedThought != null)
                     {
-                        input = $"{thought}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        var thoughtDesc = selectedThought.Description;
+                        var isPositive = selectedThought.MoodOffset() > 0;
+
+                        if (isPositive)
+                        {
+                            // Prompt for positive thoughts
+                            input = $"You ({pawn.Name}) just had the following thought {thoughtDesc}, you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        }
+                        else
+                        {
+                            // Prompt for negative thoughts (same for now, can customize later)
+                            input = $"{thoughtDesc}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        }
                     }
                     else
                     {
@@ -387,21 +395,19 @@ public class Chat(Pawn pawn, LogEntry entry)
         var subject = subjects[new System.Random().Next(subjects.Length)];
 
         // Get current thoughts separately
-        var thoughts = new List<string>();
+        var thoughts = new List<Thought>();
         if (pawn.needs?.mood?.thoughts != null)
         {
             List<Thought> allThoughts = new List<Thought>();
             pawn.needs.mood.thoughts.GetAllMoodThoughts(allThoughts);
 
             thoughts = allThoughts
-                .Select(thought => thought.Description)
-                .Where(desc => !string.IsNullOrEmpty(desc))
-                .Distinct()
+                .Where(t => !string.IsNullOrEmpty(t.Description))
                 .Take(5)
                 .ToList();
         }
 
-        var thought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
+        Thought? selectedThought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
 
 
         if (talked_to != null)
@@ -411,9 +417,21 @@ public class Chat(Pawn pawn, LogEntry entry)
             switch (KindOfTalk)
             {
                 case "Chitchat":
-                    if (thought != null)
+                    if (selectedThought != null)
                     {
-                        input = $"{thought}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        var thoughtDesc = selectedThought.Description;
+                        var isPositive = selectedThought.MoodOffset() > 0;
+
+                        if (isPositive)
+                        {
+                            // Prompt for positive thoughts
+                            input = $"You ({pawn.Name}) just had the following thought {thoughtDesc}, you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        }
+                        else
+                        {
+                            // Prompt for negative thoughts (same for now, can customize later)
+                            input = $"{thoughtDesc}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        }
                     }
                     else
                     {
@@ -520,21 +538,19 @@ public class Chat(Pawn pawn, LogEntry entry)
         var subject = subjects[new System.Random().Next(subjects.Length)];
 
         // Get current thoughts separately
-        var thoughts = new List<string>();
+        var thoughts = new List<Thought>();
         if (pawn.needs?.mood?.thoughts != null)
         {
             List<Thought> allThoughts = new List<Thought>();
             pawn.needs.mood.thoughts.GetAllMoodThoughts(allThoughts);
 
             thoughts = allThoughts
-                .Select(thought => thought.Description)
-                .Where(desc => !string.IsNullOrEmpty(desc))
-                .Distinct()
+                .Where(t => !string.IsNullOrEmpty(t.Description))
                 .Take(5)
                 .ToList();
         }
 
-        var thought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
+        Thought? selectedThought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
 
 
         if (talked_to != null)
@@ -544,9 +560,21 @@ public class Chat(Pawn pawn, LogEntry entry)
             switch (KindOfTalk)
             {
                 case "Chitchat":
-                    if (thought != null)
+                    if (selectedThought != null)
                     {
-                        input = $"{thought}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        var thoughtDesc = selectedThought.Description;
+                        var isPositive = selectedThought.MoodOffset() > 0;
+
+                        if (isPositive)
+                        {
+                            // Prompt for positive thoughts
+                            input = $"You ({pawn.Name}) just had the following thought {thoughtDesc}, you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        }
+                        else
+                        {
+                            // Prompt for negative thoughts (same for now, can customize later)
+                            input = $"{thoughtDesc}. This has been affecting you ({pawn.Name}), and you want to discuss it with your crewmate {talked_to.Name}. Express how you're feeling about this";
+                        }
                     }
                     else
                     {
