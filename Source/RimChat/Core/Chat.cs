@@ -282,7 +282,6 @@ public class Chat(Pawn pawn, LogEntry entry)
 
             thoughts = allThoughts
                 .Where(t => !string.IsNullOrEmpty(t.Description))
-                .Take(5)
                 .ToList();
         }
 
@@ -430,7 +429,6 @@ public class Chat(Pawn pawn, LogEntry entry)
 
             thoughts = allThoughts
                 .Where(t => !string.IsNullOrEmpty(t.Description))
-                .Take(5)
                 .ToList();
         }
 
@@ -600,7 +598,6 @@ public class Chat(Pawn pawn, LogEntry entry)
 
             thoughts = allThoughts
                 .Where(t => !string.IsNullOrEmpty(t.Description))
-                .Take(5)
                 .ToList();
         }
 
