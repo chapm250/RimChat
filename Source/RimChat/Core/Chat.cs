@@ -285,7 +285,7 @@ public class Chat(Pawn pawn, LogEntry entry)
                 .ToList();
         }
 
-        Thought? selectedThought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
+        Thought? selectedThought = thoughts.Count > 0 ? thoughts.RandomElement() : null;
 
 
         if (talked_to != null)
@@ -432,8 +432,7 @@ public class Chat(Pawn pawn, LogEntry entry)
                 .ToList();
         }
 
-        Thought? selectedThought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
-
+        Thought? selectedThought = thoughts.Count > 0 ? thoughts.RandomElement() : null;
 
         if (talked_to != null)
         {
@@ -601,7 +600,7 @@ public class Chat(Pawn pawn, LogEntry entry)
                 .ToList();
         }
 
-        Thought? selectedThought = thoughts.Count > 0 ? thoughts[new System.Random().Next(thoughts.Count)] : null;
+        Thought? selectedThought = thoughts.Count > 0 ? thoughts.RandomElement() : null;
 
 
         if (talked_to != null)
