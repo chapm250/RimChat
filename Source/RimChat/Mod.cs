@@ -32,7 +32,7 @@ public sealed class Mod : Verse.Mod
     public override void DoSettingsWindowContents(Rect inRect)
     {
         var viewRect = new Rect(0f, 0f, inRect.width - 16f, inRect.height);
-        var scrollRect = new Rect(0f, 0f, inRect.width - 16f, 1500f); // Adjust height as needed
+        var scrollRect = new Rect(0f, 0f, inRect.width - 16f, 2000f); // Adjust height as needed
 
         Widgets.BeginScrollView(viewRect, ref scrollPosition, scrollRect);
         var listing = new Listing_Standard();
