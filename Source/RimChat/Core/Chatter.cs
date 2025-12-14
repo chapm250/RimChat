@@ -75,10 +75,12 @@ public static class Chatter
                 if (initiator != pawn) { return; }
             }
 
+            // Update next_talk IMMEDIATELY to prevent multiple conversations starting at once
+            next_talk = DateTime.Now.AddMinutes(Settings.MinTimeBetweenTalkInMinutes.Value);
+
             // Start the talk
             chat.AIChat = chat.Talk(Settings.TextAPIKey.Value, talked_to, Find.History.archive.ArchivablesListForReading);
             is_up = pawn;
-            next_talk = DateTime.Now.AddMinutes(Settings.MinTimeBetweenTalkInMinutes.Value);
 
             chat.AlreadyPlayed = true;
         }
