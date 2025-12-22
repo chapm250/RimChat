@@ -296,7 +296,6 @@ public class VoiceWorldComp : WorldComponent
 
         try
         {
-            Log.Message("[Player2] Starting to fetch voices...");
             using var client = new System.Net.Http.HttpClient();
             client.DefaultRequestHeaders.Add("player2-game-key", Settings.Player2GameKey.Value);
 
@@ -305,30 +304,25 @@ public class VoiceWorldComp : WorldComponent
 
             if (!task.IsCompleted)
             {
-                Log.Warning("[Player2] Voice fetch timed out after 5 seconds!");
+                Log.Warning("Player2 voice fetch timed out after 5 seconds!");
                 return;
             }
 
             var response = task.Result;
             if (!response.IsSuccessStatusCode)
             {
-                Log.Warning($"[Player2] Failed to fetch voices: {response.StatusCode}");
-                var errorTask = response.Content.ReadAsStringAsync();
-                errorTask.Wait();
-                Log.Warning($"[Player2] Error body: {errorTask.Result}");
+                Log.Warning($"Failed to fetch Player2 voices: {response.StatusCode}");
                 return;
             }
 
             var responseTask = response.Content.ReadAsStringAsync();
             responseTask.Wait();
             var responseBody = responseTask.Result;
-            Log.Message($"[Player2] Received voices response: {responseBody.Substring(0, System.Math.Min(200, responseBody.Length))}...");
 
             using var doc = System.Text.Json.JsonDocument.Parse(responseBody);
 
             if (!doc.RootElement.TryGetProperty("voices", out var voicesArray))
             {
-                Log.Warning("[Player2] No voices array found in response.");
                 return;
             }
 
@@ -357,22 +351,18 @@ public class VoiceWorldComp : WorldComponent
                 if (gender == "male")
                 {
                     player2MalePool.Add(id);
-                    Log.Message($"[Player2] Added male voice: {id}");
                 }
                 else if (gender == "female")
                 {
                     player2FemalePool.Add(id);
-                    Log.Message($"[Player2] Added female voice: {id}");
                 }
             }
 
             player2VoicesFetched = true;
-            Log.Message($"[Player2] Fetched {player2MalePool.Count + player2FemalePool.Count} voices ({player2MalePool.Count} male, {player2FemalePool.Count} female)");
         }
         catch (System.Exception ex)
         {
-            Log.Warning($"[Player2] Error fetching voices: {ex.Message}");
-            Log.Warning($"[Player2] Stack trace: {ex.StackTrace}");
+            Log.Warning($"Error fetching Player2 voices: {ex.Message}");
         }
     }
 
@@ -399,8 +389,6 @@ public class VoiceWorldComp : WorldComponent
             {
                 FetchPlayer2VoicesSync();
             }
-
-            Log.Message($"[Player2] PoolFor called for pawn gender: {p?.gender}, fetched: {player2VoicesFetched}, male count: {player2MalePool.Count}, female count: {player2FemalePool.Count}");
 
             if (p?.gender == Gender.Male) return player2MalePool;
             if (p?.gender == Gender.Female) return player2FemalePool;
@@ -453,12 +441,10 @@ public class VoiceWorldComp : WorldComponent
             // If stored provider matches current, voice is valid
             if (storedProvider == currentProvider)
             {
-                Log.Message($"[Voice Validation] Voice {voice} for {p.Name} is valid (provider matches: {currentProvider})");
                 return true;
             }
             else
             {
-                Log.Message($"[Voice Validation] Voice {voice} for {p.Name} is invalid (stored provider: {storedProvider}, current: {currentProvider})");
                 return false;
             }
         }
@@ -527,7 +513,6 @@ public class VoiceWorldComp : WorldComponent
         pawnVoices[p] = voice;
         pawnVoiceProviders[p] = Settings.TTSProviderSetting.Value; // Store current provider
         voiceIndex[voice] = p;
-        Log.Message($"[Voice Assignment] Assigned voice {voice} to {p.Name} with provider {Settings.TTSProviderSetting.Value}");
         return true;
     }
 
@@ -558,7 +543,6 @@ public class VoiceWorldComp : WorldComponent
         if (pawnVoiceProviders == null) pawnVoiceProviders = new Dictionary<Pawn, TTSProvider>();
 
         var pool = PoolFor(p).ToList();
-        Log.Message($"[Voice Assignment] Pool size for {p.Name}: {pool.Count}");
         if (pool.Count == 0) return false;
 
         // free voices from the pool
@@ -568,14 +552,12 @@ public class VoiceWorldComp : WorldComponent
         if (free.Count > 0)
         {
             pick = free.RandomElement();
-            Log.Message($"[Voice Assignment] Assigning free voice {pick} to {p.Name}");
             return TryAssignVoice(p, pick, stealIfTaken: false);
         }
         else
         {
             // Exhausted: pick any voice from the pool
             pick = pool.RandomElement();
-            Log.Message($"[Voice Assignment] All voices taken, assigning duplicate voice {pick} to {p.Name}");
 
             // Option A (default): STEAL to preserve uniqueness
             // return TryAssignVoice(p, pick, stealIfTaken: true);

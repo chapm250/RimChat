@@ -199,13 +199,9 @@ public class Chat(Pawn pawn, LogEntry entry)
 
     public async Task<bool> VocalizePlayer2(string whatWasSaid, string voiceId)
     {
-        Log.Message($"[Player2 TTS] Starting vocalization with voice ID: {voiceId}");
-        Log.Message($"[Player2 TTS] Text to speak: {whatWasSaid}");
-
         using var client = new HttpClient();
-        client.Timeout = System.TimeSpan.FromSeconds(30); // Set timeout early
+        client.Timeout = System.TimeSpan.FromSeconds(30);
         var gameKey = Settings.Player2GameKey.Value;
-        Log.Message($"[Player2 TTS] Using game key: {(string.IsNullOrEmpty(gameKey) ? "EMPTY" : "SET")}");
         client.DefaultRequestHeaders.Add("player2-game-key", gameKey);
 
         var requestBody = new
@@ -218,99 +214,61 @@ public class Chat(Pawn pawn, LogEntry entry)
         };
 
         var json = JsonSerializer.Serialize(requestBody);
-        Log.Message($"[Player2 TTS] Request body: {json}");
         var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
-        Log.Message("[Player2 TTS] Sending request to http://127.0.0.1:4315/v1/tts/speak");
 
         System.Net.Http.HttpResponseMessage response;
         try
         {
             response = await client.PostAsync("http://127.0.0.1:4315/v1/tts/speak", content);
-            Log.Message($"[Player2 TTS] Received response with status: {response.StatusCode}");
         }
         catch (System.Exception ex)
         {
-            Log.Error($"[Player2 TTS] Exception during POST request: {ex.Message}");
-            Log.Error($"[Player2 TTS] Stack trace: {ex.StackTrace}");
+            Log.Message($"Player2 TTS request failed: {ex.Message}");
             return false;
         }
 
         if (!response.IsSuccessStatusCode)
         {
-            Log.Message("[Player2 TTS] Failed to vocalize text with Player2.");
-            Log.Message($"[Player2 TTS] Status Code: {response.StatusCode}");
-            var errorBody = await response.Content.ReadAsStringAsync();
-            Log.Message($"[Player2 TTS] Error Body: {errorBody}");
+            Log.Message("Failed to vocalize text with Player2.");
+            Log.Message($"Status Code: {response.StatusCode}");
             return false;
         }
 
         var responseBody = await response.Content.ReadAsStringAsync();
-        Log.Message($"[Player2 TTS] Response body length: {responseBody.Length} characters");
-        Log.Message($"[Player2 TTS] Response preview: {responseBody.Substring(0, System.Math.Min(200, responseBody.Length))}...");
 
         try
         {
-            // Parse the response JSON and extract the base64 audio data
-            Log.Message("[Player2 TTS] Parsing JSON response...");
             using var doc = JsonDocument.Parse(responseBody);
-
-            Log.Message("[Player2 TTS] Looking for 'data' property...");
             if (!doc.RootElement.TryGetProperty("data", out var audioDataElement))
             {
-                Log.Error("[Player2 TTS] Failed to find 'data' property in Player2 response.");
-                Log.Error($"[Player2 TTS] Available properties: {string.Join(", ", doc.RootElement.EnumerateObject().Select(p => p.Name))}");
+                Log.Message("Failed to find data in Player2 response.");
                 return false;
             }
 
-            Log.Message("[Player2 TTS] Extracting base64 string...");
             var audioBase64 = audioDataElement.GetString();
             if (string.IsNullOrEmpty(audioBase64))
             {
-                Log.Error("[Player2 TTS] Audio base64 string is null or empty!");
                 return false;
             }
-            Log.Message($"[Player2 TTS] Raw data string length: {audioBase64.Length}");
 
             // Player2 returns a data URI like: data:audio/pcm;rate=24000;base64,ACTUALBASE64DATA
-            // We need to strip the prefix and extract just the base64 part
+            // Strip the prefix and extract just the base64 part
             if (audioBase64.StartsWith("data:"))
             {
-                Log.Message("[Player2 TTS] Detected data URI format, extracting base64 portion...");
                 var commaIndex = audioBase64.IndexOf(',');
                 if (commaIndex >= 0)
                 {
                     audioBase64 = audioBase64.Substring(commaIndex + 1);
-                    Log.Message($"[Player2 TTS] Extracted base64 string length: {audioBase64.Length}");
-                }
-                else
-                {
-                    Log.Error("[Player2 TTS] Data URI format detected but no comma found!");
-                    return false;
                 }
             }
 
-            Log.Message("[Player2 TTS] Decoding base64 to bytes...");
             var audioBytes = System.Convert.FromBase64String(audioBase64);
-            Log.Message($"[Player2 TTS] Decoded {audioBytes.Length} bytes of audio data");
 
-            // Assume 24kHz sample rate for Player2 (adjust if needed based on their actual output)
-            Log.Message("[Player2 TTS] Creating AudioClip from PCM data...");
             var audioClip = WavUtility.ToAudioClipWithSampleRate(audioBytes, "VocalizedText", 24000);
-            if (audioClip == null)
-            {
-                Log.Error("[Player2 TTS] AudioClip creation returned null!");
-                return false;
-            }
-            Log.Message($"[Player2 TTS] AudioClip created: length={audioClip.length}s, samples={audioClip.samples}");
-
-            Log.Message("[Player2 TTS] Creating AudioSource...");
             var audioSource = new GameObject("VocalizedAudioSource").AddComponent<AudioSource>();
             audioSource.clip = audioClip;
             audioSource.volume = 1f;
             AudioSource = audioSource;
-
-            Log.Message("[Player2 TTS] Adjusting music volume and starting playback...");
             MusicVol = Prefs.VolumeMusic;
             Prefs.VolumeMusic = 0.05f;
             Prefs.Apply();
@@ -319,13 +277,12 @@ public class Chat(Pawn pawn, LogEntry entry)
             entry = null;
             MusicReset = false;
 
-            Log.Message($"[Player2 TTS] Successfully started playback!");
+            Log.Message($"Received {audioBytes.Length} bytes of audio data from Player2.");
             return true;
         }
         catch (System.Exception ex)
         {
-            Log.Error($"[Player2 TTS] Exception during audio processing: {ex.Message}");
-            Log.Error($"[Player2 TTS] Stack trace: {ex.StackTrace}");
+            Log.Message($"Player2 audio processing failed: {ex.Message}");
             return false;
         }
     }
@@ -915,7 +872,6 @@ public class Chat(Pawn pawn, LogEntry entry)
 
     public async Task<string?> GetPlayer2ResponseAsync(string gameKey, Pawn? talked_to, string all_history)
     {
-        Log.Message($"[Player2 LLM] Starting chat completion for {pawn.Name}");
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Add("player2-game-key", gameKey);
         var instructions = "";
@@ -1055,17 +1011,15 @@ public class Chat(Pawn pawn, LogEntry entry)
         var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
         var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-        Log.Message($"[Player2 LLM] Request: {json.Substring(0, System.Math.Min(300, json.Length))}...");
         var response = await client.PostAsync("http://127.0.0.1:4315/v1/chat/completions", content);
         if (!response.IsSuccessStatusCode)
         {
             var errorBody = await response.Content.ReadAsStringAsync();
-            Log.Message($"[Player2 LLM] Error: {response.StatusCode} - {errorBody}");
+            Log.Message($"Player2 API Error: {response.StatusCode} - {errorBody}");
             return null;
         }
 
         var responseBody = await response.Content.ReadAsStringAsync();
-        Log.Message($"[Player2 LLM] Response: {responseBody.Substring(0, System.Math.Min(300, responseBody.Length))}...");
 
         // Parse the Player2 response JSON (follows OpenAI format)
         using var doc = JsonDocument.Parse(responseBody);
@@ -1075,13 +1029,11 @@ public class Chat(Pawn pawn, LogEntry entry)
             if (firstChoice.TryGetProperty("message", out var message) &&
                 message.TryGetProperty("content", out var textElement))
             {
-                var result = textElement.GetString();
-                Log.Message($"[Player2 LLM] Extracted content: {result}");
-                return result;
+                return textElement.GetString();
             }
         }
 
-        Log.Message("[Player2 LLM] No text found in Player2 response.");
+        Log.Message("No text found in Player2 response.");
         return responseBody;
     }
 }
