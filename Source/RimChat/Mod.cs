@@ -77,6 +77,11 @@ public sealed class Mod : Verse.Mod
 
         listing.Gap();
 
+        listing.Label("Player2 Game Key:");
+        Settings.Player2GameKey.Value = listing.TextEntry(Settings.Player2GameKey.Value);
+
+        listing.Gap();
+
         if (listing.ButtonText($"TTS Provider: {Settings.TTSProviderSetting.Value}"))
         {
             var options = new List<FloatMenuOption>();

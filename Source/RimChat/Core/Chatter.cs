@@ -99,6 +99,8 @@ public static class Chatter
             chat.AlreadyPlayed = false;
             var voice = db.GetVoice(chat.pawn);
 
+            Log.Message($"[Chatter] About to vocalize. Provider: {Settings.TTSProviderSetting.Value}, Voice: {voice}, Text: {result}");
+
             if (Settings.TTSProviderSetting.Value == TTSProvider.OpenAI)
             {
                 await chat.VocalizeOpenAI(result, voice);
@@ -106,6 +108,10 @@ public static class Chatter
             else if (Settings.TTSProviderSetting.Value == TTSProvider.Resemble)
             {
                 await chat.VocalizeResemble(result, voice);
+            }
+            else if (Settings.TTSProviderSetting.Value == TTSProvider.Player2)
+            {
+                await chat.VocalizePlayer2(result, voice);
             }
             else
             {
@@ -215,15 +221,23 @@ public class VoiceWorldComp : WorldComponent
     private HashSet<string> resembleFemalePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     { "fb2d2858", "55f5b8dc", "96d225a3", "4e972f71", "8d516bf5", "1cf47426", "1ff0045f", "f453b918" };
 
+    // --- Player2 voice pools (fetched on-demand from API) ---
+    private HashSet<string> player2MalePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> player2FemalePool = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private bool player2VoicesFetched = false;
 
     // --- Main storage: pawn -> voice ---
     private Dictionary<Pawn, string> pawnVoices = new Dictionary<Pawn, string>();
+    private Dictionary<Pawn, TTSProvider> pawnVoiceProviders = new Dictionary<Pawn, TTSProvider>();
+
     // Reverse index ensures uniqueness: voice -> owner
     private Dictionary<string, Pawn> voiceIndex = new Dictionary<string, Pawn>(StringComparer.OrdinalIgnoreCase);
-    
+
     // Scribe helpers
     private List<Pawn> _keys;
     private List<string> _vals;
+    private List<Pawn> _keys2;
+    private List<TTSProvider> _providers;
 
     public VoiceWorldComp(World world) : base(world) { }
 
@@ -235,8 +249,14 @@ public class VoiceWorldComp : WorldComponent
         Scribe_Collections.Look(ref pawnVoices, "pawnVoices",
             LookMode.Reference, LookMode.Value, ref _keys, ref _vals);
 
+        Scribe_Collections.Look(ref pawnVoiceProviders, "pawnVoiceProviders",
+            LookMode.Reference, LookMode.Value, ref _keys2, ref _providers);
+
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
         {
+            // Initialize dictionaries if they're null (loading old saves)
+            if (pawnVoices == null) pawnVoices = new Dictionary<Pawn, string>();
+            if (pawnVoiceProviders == null) pawnVoiceProviders = new Dictionary<Pawn, TTSProvider>();
 
             RebuildIndexAndPrune();
         }
@@ -270,6 +290,92 @@ public class VoiceWorldComp : WorldComponent
     private static bool IsValidHumanlike(Pawn p) =>
         p != null && p.RaceProps?.Humanlike == true && !p.DestroyedOrNull();
 
+    private void FetchPlayer2VoicesSync()
+    {
+        if (player2VoicesFetched) return;
+
+        try
+        {
+            Log.Message("[Player2] Starting to fetch voices...");
+            using var client = new System.Net.Http.HttpClient();
+            client.DefaultRequestHeaders.Add("player2-game-key", Settings.Player2GameKey.Value);
+
+            var task = client.GetAsync("http://127.0.0.1:4315/v1/tts/voices");
+            task.Wait(5000); // Wait up to 5 seconds
+
+            if (!task.IsCompleted)
+            {
+                Log.Warning("[Player2] Voice fetch timed out after 5 seconds!");
+                return;
+            }
+
+            var response = task.Result;
+            if (!response.IsSuccessStatusCode)
+            {
+                Log.Warning($"[Player2] Failed to fetch voices: {response.StatusCode}");
+                var errorTask = response.Content.ReadAsStringAsync();
+                errorTask.Wait();
+                Log.Warning($"[Player2] Error body: {errorTask.Result}");
+                return;
+            }
+
+            var responseTask = response.Content.ReadAsStringAsync();
+            responseTask.Wait();
+            var responseBody = responseTask.Result;
+            Log.Message($"[Player2] Received voices response: {responseBody.Substring(0, System.Math.Min(200, responseBody.Length))}...");
+
+            using var doc = System.Text.Json.JsonDocument.Parse(responseBody);
+
+            if (!doc.RootElement.TryGetProperty("voices", out var voicesArray))
+            {
+                Log.Warning("[Player2] No voices array found in response.");
+                return;
+            }
+
+            player2MalePool.Clear();
+            player2FemalePool.Clear();
+
+            foreach (var voice in voicesArray.EnumerateArray())
+            {
+                if (!voice.TryGetProperty("id", out var idElement) ||
+                    !voice.TryGetProperty("language", out var langElement) ||
+                    !voice.TryGetProperty("gender", out var genderElement))
+                {
+                    continue;
+                }
+
+                var id = idElement.GetString();
+                var language = langElement.GetString();
+                var gender = genderElement.GetString();
+
+                // Only include English voices (american_english and british_english)
+                if (language != "american_english" && language != "british_english")
+                {
+                    continue;
+                }
+
+                if (gender == "male")
+                {
+                    player2MalePool.Add(id);
+                    Log.Message($"[Player2] Added male voice: {id}");
+                }
+                else if (gender == "female")
+                {
+                    player2FemalePool.Add(id);
+                    Log.Message($"[Player2] Added female voice: {id}");
+                }
+            }
+
+            player2VoicesFetched = true;
+            Log.Message($"[Player2] Fetched {player2MalePool.Count + player2FemalePool.Count} voices ({player2MalePool.Count} male, {player2FemalePool.Count} female)");
+        }
+        catch (System.Exception ex)
+        {
+            Log.Warning($"[Player2] Error fetching voices: {ex.Message}");
+            Log.Warning($"[Player2] Stack trace: {ex.StackTrace}");
+        }
+    }
+
     private IEnumerable<string> PoolFor(Pawn p)
     {
         var provider = Settings.TTSProviderSetting.Value;
@@ -285,6 +391,20 @@ public class VoiceWorldComp : WorldComponent
             if (p?.gender == Gender.Male) return resembleMalePool;
             if (p?.gender == Gender.Female) return resembleFemalePool;
             return resembleMalePool.Concat(resembleFemalePool).Distinct(StringComparer.OrdinalIgnoreCase);
+        }
+        else if (provider == TTSProvider.Player2)
+        {
+            // Fetch voices from API if not already fetched
+            if (!player2VoicesFetched)
+            {
+                FetchPlayer2VoicesSync();
+            }
+
+            Log.Message($"[Player2] PoolFor called for pawn gender: {p?.gender}, fetched: {player2VoicesFetched}, male count: {player2MalePool.Count}, female count: {player2FemalePool.Count}");
+
+            if (p?.gender == Gender.Male) return player2MalePool;
+            if (p?.gender == Gender.Female) return player2FemalePool;
+            return player2MalePool.Concat(player2FemalePool).Distinct(StringComparer.OrdinalIgnoreCase);
         }
         else // ElevenLabs
         {
@@ -302,7 +422,7 @@ public class VoiceWorldComp : WorldComponent
         if (pawnVoices.TryGetValue(p, out var voice))
         {
             // Check if the voice is valid for the current provider
-            if (!IsVoiceValidForCurrentProvider(voice))
+            if (!IsVoiceValidForCurrentProvider(p, voice))
             {
                 // Voice is from a different provider, reassign
                 Log.Message($"Voice {voice} for pawn {p.Name} is invalid for current TTS provider, reassigning...");
@@ -315,19 +435,51 @@ public class VoiceWorldComp : WorldComponent
         return null;
     }
 
-    private bool IsVoiceValidForCurrentProvider(string voice)
+    private bool IsVoiceValidForCurrentProvider(Pawn p, string voice)
     {
         if (string.IsNullOrWhiteSpace(voice)) return false;
 
-        var provider = Settings.TTSProviderSetting.Value;
+        var currentProvider = Settings.TTSProviderSetting.Value;
 
-        if (provider == TTSProvider.OpenAI)
+        // Initialize pawnVoiceProviders if null (shouldn't happen, but safety first)
+        if (pawnVoiceProviders == null)
+        {
+            pawnVoiceProviders = new Dictionary<Pawn, TTSProvider>();
+        }
+
+        // Check if we have a stored provider for this pawn
+        if (pawnVoiceProviders.TryGetValue(p, out var storedProvider))
+        {
+            // If stored provider matches current, voice is valid
+            if (storedProvider == currentProvider)
+            {
+                Log.Message($"[Voice Validation] Voice {voice} for {p.Name} is valid (provider matches: {currentProvider})");
+                return true;
+            }
+            else
+            {
+                Log.Message($"[Voice Validation] Voice {voice} for {p.Name} is invalid (stored provider: {storedProvider}, current: {currentProvider})");
+                return false;
+            }
+        }
+
+        // No stored provider, validate against pools
+        if (currentProvider == TTSProvider.OpenAI)
         {
             return openAIMalePool.Contains(voice) || openAIFemalePool.Contains(voice);
         }
-        else if (provider == TTSProvider.Resemble)
+        else if (currentProvider == TTSProvider.Resemble)
         {
             return resembleMalePool.Contains(voice) || resembleFemalePool.Contains(voice);
+        }
+        else if (currentProvider == TTSProvider.Player2)
+        {
+            // Fetch voices if needed to validate
+            if (!player2VoicesFetched)
+            {
+                FetchPlayer2VoicesSync();
+            }
+            return player2MalePool.Contains(voice) || player2FemalePool.Contains(voice);
         }
         else // ElevenLabs
         {
@@ -354,6 +506,10 @@ public class VoiceWorldComp : WorldComponent
             return true;
         }
 
+        // Initialize dictionaries if null
+        if (pawnVoices == null) pawnVoices = new Dictionary<Pawn, string>();
+        if (pawnVoiceProviders == null) pawnVoiceProviders = new Dictionary<Pawn, TTSProvider>();
+
         // already has it?
         if (pawnVoices.TryGetValue(p, out var current) &&
             string.Equals(current, voice, StringComparison.OrdinalIgnoreCase))
@@ -369,16 +525,22 @@ public class VoiceWorldComp : WorldComponent
         // update indices
         if (current != null) voiceIndex.Remove(current);
         pawnVoices[p] = voice;
+        pawnVoiceProviders[p] = Settings.TTSProviderSetting.Value; // Store current provider
         voiceIndex[voice] = p;
+        Log.Message($"[Voice Assignment] Assigned voice {voice} to {p.Name} with provider {Settings.TTSProviderSetting.Value}");
         return true;
     }
 
     public void UnassignVoice(Pawn p)
     {
         if (p == null) return;
+        if (pawnVoices == null) return;
+        if (pawnVoiceProviders == null) pawnVoiceProviders = new Dictionary<Pawn, TTSProvider>();
+
         if (pawnVoices.TryGetValue(p, out var old))
         {
             pawnVoices.Remove(p);
+            pawnVoiceProviders.Remove(p);
             if (old != null) voiceIndex.Remove(old);
         }
     }
@@ -391,7 +553,12 @@ public class VoiceWorldComp : WorldComponent
     {
         if (!IsValidHumanlike(p)) return false;
 
+        // Initialize dictionaries if null
+        if (pawnVoices == null) pawnVoices = new Dictionary<Pawn, string>();
+        if (pawnVoiceProviders == null) pawnVoiceProviders = new Dictionary<Pawn, TTSProvider>();
+
         var pool = PoolFor(p).ToList();
+        Log.Message($"[Voice Assignment] Pool size for {p.Name}: {pool.Count}");
         if (pool.Count == 0) return false;
 
         // free voices from the pool
@@ -401,18 +568,21 @@ public class VoiceWorldComp : WorldComponent
         if (free.Count > 0)
         {
             pick = free.RandomElement();
+            Log.Message($"[Voice Assignment] Assigning free voice {pick} to {p.Name}");
             return TryAssignVoice(p, pick, stealIfTaken: false);
         }
         else
         {
             // Exhausted: pick any voice from the pool
             pick = pool.RandomElement();
+            Log.Message($"[Voice Assignment] All voices taken, assigning duplicate voice {pick} to {p.Name}");
 
             // Option A (default): STEAL to preserve uniqueness
             // return TryAssignVoice(p, pick, stealIfTaken: true);
 
             // Option B: ALLOW DUPLICATE (comment above line, uncomment below)
             pawnVoices[p] = pick; // duplicate allowed
+            pawnVoiceProviders[p] = Settings.TTSProviderSetting.Value; // Store current provider
             return true;
         }
     }
