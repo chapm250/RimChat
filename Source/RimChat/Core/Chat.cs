@@ -874,6 +874,7 @@ public class Chat(Pawn pawn, LogEntry entry)
     {
         using var client = new HttpClient();
         client.DefaultRequestHeaders.Add("player2-game-key", gameKey);
+
         var instructions = "";
         var input = "";
 

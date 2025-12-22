@@ -42,7 +42,7 @@ public class Settings : ModSettings
     public static readonly Setting<string> GeminiAPIKey = new(nameof(GeminiAPIKey), "");
     public static readonly Setting<string> VoiceAPIKey = new(nameof(VoiceAPIKey), "");
     public static readonly Setting<string> ResembleAPIKey = new(nameof(ResembleAPIKey), "");
-    public static readonly Setting<string> Player2GameKey = new(nameof(Player2GameKey), "");
+    public static readonly Setting<string> Player2GameKey = new(nameof(Player2GameKey), "019b4719-51c5-7768-a427-cf3eb14959cd");
     public static readonly Setting<LLMProvider> LLMProviderSetting = new(nameof(LLMProviderSetting), LLMProvider.OpenAI);
     public static readonly Setting<TTSProvider> TTSProviderSetting = new(nameof(TTSProviderSetting), TTSProvider.ElevenLabs);
     public static readonly Setting<float> MinTimeBetweenTalkInMinutes = new(nameof(MinTimeBetweenTalkInMinutes), 1f);

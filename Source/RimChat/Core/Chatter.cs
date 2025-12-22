@@ -35,6 +35,8 @@ public static class Chatter
 
     // private static Dictionary<Pawn, string> VoiceDict = new();
     private static System.DateTime next_talk = DateTime.Now;
+    private static System.DateTime last_player2_ping = DateTime.MinValue;
+    private static Task? player2_ping_task = null;
 
     private static Pawn? talked_to;
 
@@ -47,6 +49,10 @@ public static class Chatter
         if (altitude <= 0 || altitude > 40) { return; }
 
         var selected = Find.Selector!.SingleSelectedObject as Pawn;
+
+        // Ping Player2 health endpoint every 60 seconds if using Player2
+        TryPingPlayer2Health();
+
         StartTalk();
     }
 
@@ -194,6 +200,51 @@ public static class Chatter
         Compatibility.Apply(ref altitude);
 
         return altitude;
+    }
+
+    private static void TryPingPlayer2Health()
+    {
+        // Only ping if using Player2 for LLM or TTS
+        if (Settings.LLMProviderSetting.Value != LLMProvider.Player2 &&
+            Settings.TTSProviderSetting.Value != TTSProvider.Player2)
+        {
+            return;
+        }
+
+        // Check if 60 seconds have passed since last ping
+        if ((DateTime.Now - last_player2_ping).TotalSeconds < 60)
+        {
+            return;
+        }
+
+        // Don't start a new ping if one is already in progress
+        if (player2_ping_task != null && !player2_ping_task.IsCompleted)
+        {
+            return;
+        }
+
+        // Update the last ping time
+        last_player2_ping = DateTime.Now;
+
+        // Start the ping task
+        player2_ping_task = PingPlayer2HealthAsync();
+    }
+
+    private static async Task PingPlayer2HealthAsync()
+    {
+        try
+        {
+            using var client = new System.Net.Http.HttpClient();
+            client.Timeout = System.TimeSpan.FromSeconds(5);
+            client.DefaultRequestHeaders.Add("player2-game-key", Settings.Player2GameKey.Value);
+
+            await client.GetAsync("http://127.0.0.1:4315/v1/health");
+        }
+        catch (System.Exception ex)
+        {
+            // Silently fail - pinging is not critical
+            Mod.Log($"Player2 health ping failed: {ex.Message}");
+        }
     }
 }
 
